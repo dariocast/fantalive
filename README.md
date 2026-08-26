@@ -1,6 +1,6 @@
 # ⚽ FantaLive Companion
 
-**FantaLive Companion** è un'applicazione web e PWA ad alta densità informativa e a **latenza decisionale zero**, progettata specificamente per supportare i fantallenatori durante le sessioni d'asta live.
+**FantaLive Companion** è un'applicazione web ad alta densità informativa e a **latenza decisionale zero**, progettata specificamente per supportare i fantallenatori durante le sessioni d'asta live del Fantacalcio (Classic e Mantra).
 
 ---
 
@@ -17,39 +17,44 @@ npm run dev
 npm run build
 ```
 
-L'app si aprirà all'indirizzo `http://localhost:3000`.
+L'applicazione sarà disponibile localmente all'indirizzo `http://localhost:3000`.
 
 ---
 
 ## 🎯 Funzionalità Principali
 
-1. **Configurazione Pre-Asta (Fedele allo Screenshot di Riferimento)**:
-   - Impostazione nome dell'asta (es. *Asta #1*).
-   - Scelta modalità: **Classic** / **Mantra**.
-   - Modalità base asta: *Base 1 credito*, *Draft (fantavalore di mercato)*, *Base quotazione*.
-   - Crediti totali: *250*, *500*, *1000* o valore personalizzato (*Scrivi*).
-   - Modificatore di difesa & Imbattibilità portiere con switch dedicati.
-   - Tipologia asta: *A chiamata*, *Random*, *Ordine alfabetico*.
-   - Partecipanti: *6*, *8*, *10*, *12* o personalizzato (*Scrivi*), con modifica diretta dei nomi e personalizzazione slot rosa.
-   - Listone Excel pre-caricato (**515 giocatori** da `Listone_Fantaculo_2026_08_26.xlsx`) e supporto a upload drag-and-drop di qualsiasi altro file `.xlsx` / `.csv`.
+### 1. ⚙️ Configurazione Pre-Asta Personalizzabile
+- Scelta modalità: **Classic** o **Mantra**.
+- Criterio base asta: *Base 1 credito*, *Draft (valore di mercato)* o *Quotazione*.
+- Budget totale: *250*, *500*, *1000* o valore personalizzato a piacere.
+- Regole di lega: *Modificatore difesa* e *Imbattibilità portiere*.
+- Tipologia d'asta: *A chiamata*, *Random* o *Ordine alfabetico*.
+- Partecipanti configurabili (da 2 a 20 fantallenatori) con personalizzazione diretta dei nomi e dei requisiti di slot per ruolo (P, D, C, A).
+- **Importazione Listone Excel**: Caricamento drag-and-drop di qualsiasi file `.xlsx`, `.xls` o `.csv` elaborato interamente client-side nel browser per la massima privacy.
 
-2. **Vista Focus Calciatore (Live Screen a Schermo Intero)**:
-   - Layout ultra-visibile a colpo d'occhio con tipografia ad alto contrasto e tema scuro neon.
-   - Badge cromatici di titolarità (Verde >80%, Giallo 50-79%, Rosso <50%).
-   - Statistiche chiave: **PMA** (Prezzo Medio Asta), **PFC** (Prezzo FantaCulo), **FantaMedia Prevista**, **Rigorista %**, **Piazzati %**, commenti e note tecnico-tattiche.
-   - **Target Price Dinamico**: calcolo in tempo reale del tetto massimo consigliato in base ai crediti residui e agli slot mancanti.
+### 2. 🔍 Vista Focus Calciatore (Glanceable Spotlight)
+- Tipografia gigante ad alto contrasto e tema scuro progettato per essere letto a distanza senza affaticare la vista.
+- Indicatori cromatici di titolarità e percentuali su piazzati / rigori.
+- **Metriche Chiave**: Prezzo Medio Asta (PMA), Prezzo Algoritmo (PFC), FantaMedia Prevista e storico stagionale.
+- **Target Price Dinamico**: algoritmo intelligente che consiglia in tempo reale l'offerta massima raccomandata in base al budget residuo e agli slot ancora da coprire.
+- **Integrazione Probabili Formazioni**: sincronizzazione in tempo reale dello status della prossima giornata (titolare, panchina, ballottaggio con percentuali esatte, infortuni e squalifiche).
 
-3. **Motore di Assegnazione Rapida**:
-   - Stepper rapidi per il prezzo (`+1`, `+2`, `+5`, `+10`, `+20`, `+50`, `PMA`, `PFC`, `Reset`).
-   - Tasto primario gigante **"ASSEGNA A ME"** (Invio) con animazione e coriandoli celebrativi.
-   - Griglia di assegnazione rapida agli avversari con tasti fisici `1-9`.
-   - Segna come Invenduto (`Esc`) e Rollback / Undo istantaneo (`Ctrl+Z`).
+### 3. ⚡ Motore di Battuta & Assegnazione Istantanea
+- Stepper rapidi per l'offerta (`+1`, `+2`, `+5`, `+10`, `+20`, `+50`, `PMA`, `PFC`, `Reset`).
+- Pulsante primario gigante **"ASSEGNA A ME"** con feedback audio ed effetti celebrativi.
+- Assegnazione con singolo tocco o tasto fisico agli avversari (`1-9`).
+- Gestione calciatori **Invenduti** e pulsante **Rollback / Undo istantaneo** (`Ctrl+Z`).
 
-4. **Tracciamento Rose & Tabellone Avversari**:
-   - Spesa per ruolo (P, D, C, A) e media crediti per slot residuo.
-   - Tabellone avversari con budget residuo, spesa totale e calcolo del **potere d'acquisto massimo** (`max bid`).
-   - Feed cronologico live di tutti gli eventi con possibilità di annullamento.
-   - Esportazione finale in **Excel (.xlsx)** e copia testo formattato per chat/WhatsApp.
+### 4. 🔄 Lista Invenduti Dedicata & Nuovi Giri d'Asta
+- Sezione dedicata per visualizzare e filtrare per ruolo tutti i calciatori rimasti invenduti.
+- Azione 1-click **"Rimetti tutti in gioco per Nuovo Giro"** per avviare rapidamente i successivi giri d'asta o di riparazione.
+- Possibilità di rimettere in battuta singoli calciatori con un clic.
+
+### 5. 📊 Tabellone Rose & Strategia Avversari
+- Monitoraggio della spesa per ruolo e budget residuo per ogni partecipante.
+- Calcolo automatico della **Max Offerta consentita** (`max bid`) per ciascun avversario.
+- Feed cronologico live di tutti gli acquisti registrati.
+- Esportazione finale della sessione d'asta in formato **Excel (.xlsx)** e testo formattato per chat e WhatsApp.
 
 ---
 
@@ -63,5 +68,23 @@ L'app si aprirà all'indirizzo `http://localhost:3000`.
 | **`Ctrl + Z`** / **`Cmd + Z`** | **Undo** dell'ultima assegnazione |
 | **`Freccia Su`** / **`K`** | Calciatore precedente |
 | **`Freccia Giù`** / **`J`** | Calciatore successivo |
-| **`+`** / **`-`** | Aumenta / diminuisci offerta di 1 |
+| **`+`** / **`-`** | Aumenta / diminuisci offerta di 1 credito |
 | **`/`** oppure **`Spazio`** | Focus immediato sulla barra di ricerca |
+
+---
+
+## 🛠️ Stack Tecnologico
+
+- **Framework**: [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand) con persistenza automatica `localStorage`
+- **Spreadsheet Engine**: [SheetJS (xlsx)](https://sheetjs.com/)
+- **Audio Engine**: Web Audio API Synthesizer (suoni di battuta, tick e assegnazione)
+- **Deployment**: [GitHub Pages](https://pages.github.com/) via GitHub Actions
+
+---
+
+## 📄 Licenza
+
+Distribuito sotto licenza MIT.
