@@ -43,7 +43,7 @@ export const App: React.FC = () => {
         </div>
 
         {/* MOBILE / TABLET SINGLE COLUMN WITH TAB SWITCHING */}
-        <div className="block lg:hidden h-[calc(100vh-140px)] pb-16">
+        <div className="block lg:hidden h-[calc(100dvh-125px)]">
           {activeMobileTab === 'focus' && <PlayerFocusCard />}
           {activeMobileTab === 'list' && <PlayerList />}
           {(activeMobileTab === 'roster' || activeMobileTab === 'opponents') && <RosterAndOpponents />}
@@ -52,7 +52,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#100c30]/95 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[#0d0928]/98 backdrop-blur-2xl border-t border-white/15 px-2 py-1 flex items-center justify-around shadow-2xl safe-area-pb">
         <button
           type="button"
           onClick={() => setActiveMobileTab('focus')}

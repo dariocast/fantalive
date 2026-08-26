@@ -17,12 +17,15 @@ import {
   LayoutGrid,
   Smartphone
 } from 'lucide-react';
-import { getMaxBid, getTotalRemainingSlots, getAverageBudgetPerRemainingSlot } from '../utils/calculations';
+import { getMaxBid, getTotalRemainingSlots, getAverageBudgetPerRemainingSlot, getRoleColor } from '../utils/calculations';
 
 export const Header: React.FC = () => {
   const { 
     settings, 
     managers, 
+    players,
+    selectedPlayerId,
+    currentBid,
     soundEnabled, 
     toggleSound, 
     setOpponentsModalOpen, 
@@ -37,6 +40,8 @@ export const Header: React.FC = () => {
   } = useAuctionStore();
 
   const user = managers.find((m) => m.isUser) || managers[0];
+  const activePlayer = players.find((p) => String(p.id) === String(selectedPlayerId));
+  const roleStyle = activePlayer ? getRoleColor(activePlayer.role) : null;
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
 
@@ -112,8 +117,34 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
+          {/* ACTIVE PLAYER SPOTLIGHT CAPSULE (ALWAYS VISIBLE PINNED AT TOP OF SCREEN) */}
+          {activePlayer && (
+            <div 
+              onClick={() => setActiveMobileTab('focus')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-[#1c164a] to-[#251e60] border border-[#00f59b]/50 shadow-md cursor-pointer active:scale-95 transition min-w-0"
+              title="Clicca per aprire la scheda di battuta"
+            >
+              {roleStyle && (
+                <span className={`w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] shrink-0 ${roleStyle.badge}`}>
+                  {activePlayer.role}
+                </span>
+              )}
+              <div className="min-w-0 truncate">
+                <span className="font-black text-xs sm:text-sm text-white truncate block">
+                  {activePlayer.name}
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-300 font-semibold truncate hidden sm:inline">
+                {activePlayer.team}
+              </span>
+              <span className="text-xs font-mono font-black text-[#00f59b] shrink-0 pl-1 border-l border-white/15">
+                {currentBid} FM
+              </span>
+            </div>
+          )}
+
           {/* Mobile Right Controls Quick Access */}
-          <div className="flex md:hidden items-center gap-1.5">
+          <div className="flex md:hidden items-center gap-1.5 shrink-0">
             <button
               onClick={toggleSound}
               className={`p-2 rounded-xl border text-xs transition ${

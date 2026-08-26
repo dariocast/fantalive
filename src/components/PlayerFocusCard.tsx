@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { useAuctionStore } from '../store/useAuctionStore';
 import { Player, Role, Manager } from '../types';
 import { getPlayerProbabiliStatus, ProbabiliPlayerInfo } from '../utils/probabiliScraper';
@@ -56,9 +56,19 @@ export const PlayerFocusCard: React.FC = () => {
     reintroducePlayer
   } = useAuctionStore();
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const player = players.find((p) => String(p.id) === String(selectedPlayerId)) || players[0];
   const user = managers.find((m) => m.isUser) || managers[0];
   const opponents = managers.filter((m) => !m.isUser);
+
+  // Always reset scroll to top when a new player is selected / assigned
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [selectedPlayerId]);
 
   const probabiliInfo: ProbabiliPlayerInfo | null = player 
     ? getPlayerProbabiliStatus(player, probabiliData?.players || null) 
@@ -238,7 +248,7 @@ export const PlayerFocusCard: React.FC = () => {
       </div>
 
       {/* Main Focus Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 pb-44 lg:pb-8">
         
         {/* BIG PLAYER SPOTLIGHT HEADER */}
         <div className="bg-[#181342] p-4 sm:p-6 rounded-3xl border border-white/10 shadow-lg relative overflow-hidden">
