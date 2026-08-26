@@ -579,13 +579,22 @@ export const PlayerFocusCard: React.FC = () => {
             <div className="relative flex items-center justify-center">
               <input
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 min="1"
                 max="9999"
                 value={currentBid}
                 onChange={(e) => setBid(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-44 sm:w-56 h-20 sm:h-24 bg-[#0d0a26] border-2 border-[#00f59b] focus:ring-4 focus:ring-[#00f59b]/20 rounded-3xl text-center text-4xl sm:text-6xl font-black text-[#00f59b] font-mono outline-none shadow-2xl tracking-tight"
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+                onMouseUp={(e) => e.preventDefault()}
+                onTouchEnd={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  setTimeout(() => target.select(), 50);
+                }}
+                className="w-44 sm:w-56 h-20 sm:h-24 bg-[#0d0a26] border-2 border-[#00f59b] focus:ring-4 focus:ring-[#00f59b]/20 rounded-3xl text-center text-4xl sm:text-6xl font-black text-[#00f59b] font-mono outline-none shadow-2xl tracking-tight cursor-text"
               />
-              <span className="absolute right-4 bottom-3 text-xs sm:text-sm font-black text-[#00f59b]/60 font-sans">
+              <span className="absolute right-4 bottom-3 text-xs sm:text-sm font-black text-[#00f59b]/60 font-sans pointer-events-none">
                 FM
               </span>
             </div>
