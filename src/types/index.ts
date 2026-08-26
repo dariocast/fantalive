@@ -6,6 +6,7 @@ export type AuctionType = 'chiamata' | 'random' | 'alfabetico';
 
 export interface Player {
   id: string | number;
+  idFantacalcio?: string | number;
   name: string;
   team: string;
   teamSlug?: string;

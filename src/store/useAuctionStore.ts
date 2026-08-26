@@ -5,7 +5,7 @@ import defaultPlayersRaw from '../data/defaultPlayers.json';
 import defaultProbabiliRaw from '../data/defaultProbabili.json';
 import { soundManager } from '../utils/audio';
 import { getCreditsFromPMA } from '../utils/calculations';
-import { parseProbabiliHtml, ProbabiliResponse, ProbabiliPlayerInfo } from '../utils/probabiliScraper';
+import { parseProbabiliAndInfortunatiHtml, ProbabiliResponse, ProbabiliPlayerInfo } from '../utils/probabiliScraper';
 import confetti from 'canvas-confetti';
 
 const defaultPlayers = defaultPlayersRaw as Player[];
@@ -123,29 +123,38 @@ export const useAuctionStore = create<AuctionState>()(
       fetchProbabiliLive: async () => {
         set({ isSyncingProbabili: true });
         try {
-          let html = '';
-
-          // 1. Try local API proxy (/api/probabili)
-          try {
-            const res = await fetch('/api/probabili');
-            if (res.ok) {
-              html = await res.text();
+          const fetchWithFallback = async (endpoint: string, targetUrl: string) => {
+            // 1. Try local proxy
+            try {
+              const res = await fetch(endpoint);
+              if (res.ok) {
+                const text = await res.text();
+                if (text && text.length > 500) return text;
+              }
+            } catch {
+              // ignore
             }
-          } catch {
-            // ignore
-          }
-
-          // 2. Fallback to public CORS proxy when deployed on GitHub Pages
-          if (!html) {
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://www.fantacalcio.it/probabili-formazioni-serie-a')}`;
-            const res = await fetch(proxyUrl);
-            if (res.ok) {
-              html = await res.text();
+            // 2. Fallback to public CORS proxy
+            try {
+              const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+              const res = await fetch(proxyUrl);
+              if (res.ok) {
+                const text = await res.text();
+                if (text && text.length > 500) return text;
+              }
+            } catch {
+              // ignore
             }
-          }
+            return '';
+          };
 
-          if (html) {
-            const parsed = parseProbabiliHtml(html);
+          const [htmlProb, htmlInf] = await Promise.all([
+            fetchWithFallback('/api/probabili', 'https://www.fantacalcio.it/probabili-formazioni-serie-a'),
+            fetchWithFallback('/api/infortunati', 'https://www.fantacalcio.it/infortunati-serie-a')
+          ]);
+
+          if (htmlProb || htmlInf) {
+            const parsed = parseProbabiliAndInfortunatiHtml(htmlProb, htmlInf);
             set({
               probabiliData: parsed,
               lastProbabiliSync: parsed.updatedAt,
@@ -155,7 +164,7 @@ export const useAuctionStore = create<AuctionState>()(
             return;
           }
         } catch (err) {
-          console.warn('Could not fetch live probabili, using cached snapshot:', err);
+          console.warn('Could not fetch live probabili/infortunati, using cached snapshot:', err);
         }
         set({ isSyncingProbabili: false });
       },
