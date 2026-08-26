@@ -14,6 +14,7 @@ const defaultProbabili = defaultProbabiliRaw as unknown as ProbabiliResponse;
 const DEFAULT_SETTINGS: AuctionSettings = {
   name: 'Asta #1',
   mode: 'classic',
+  trackingMode: 'solo_me',
   basePriceType: '1credito',
   totalBudget: 500,
   modDifesa: false,
@@ -83,6 +84,7 @@ interface AuctionState {
   setBid: (bid: number) => void;
   incrementBid: (amount: number) => void;
   assignCurrentPlayer: (managerId: string, customPrice?: number) => void;
+  assignToGenericOpponent: (customPrice?: number) => void;
   markCurrentUnsold: () => void;
   undoLastAction: () => void;
   updateFilters: (partial: Partial<FilterState>) => void;
@@ -319,6 +321,53 @@ export const useAuctionStore = create<AuctionState>()(
         set({
           players: updatedPlayers,
           managers: updatedManagers,
+          history: [historyItem, ...history],
+          selectedPlayerId: nextFree ? nextFree.id : selectedPlayerId,
+          currentBid: 1
+        });
+      },
+
+      assignToGenericOpponent: (customPrice?: number) => {
+        const state = get();
+        const { selectedPlayerId, players, history, currentBid } = state;
+        const playerIndex = players.findIndex((p) => String(p.id) === String(selectedPlayerId));
+        if (playerIndex === -1) return;
+
+        const player = players[playerIndex];
+        const price = customPrice !== undefined ? customPrice : currentBid;
+
+        soundManager.playGavel();
+
+        const updatedPlayer: Player = {
+          ...player,
+          assignedTo: 'OPPONENT',
+          purchasePrice: price,
+          assignedAt: new Date().toISOString()
+        };
+
+        const updatedPlayers = [...players];
+        updatedPlayers[playerIndex] = updatedPlayer;
+
+        const historyItem: AuctionHistoryItem = {
+          id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          timestamp: Date.now(),
+          playerId: player.id,
+          playerName: player.name,
+          playerRole: player.role,
+          playerTeam: player.team,
+          managerId: 'OPPONENT',
+          managerName: 'Avversario',
+          price,
+          type: 'assignment'
+        };
+
+        // Automatically advance to next free player
+        const nextFree = updatedPlayers.find(
+          (p, idx) => idx > playerIndex && !p.assignedTo && p.assignedTo !== 'UNSOLD'
+        ) || updatedPlayers.find((p) => !p.assignedTo && p.assignedTo !== 'UNSOLD');
+
+        set({
+          players: updatedPlayers,
           history: [historyItem, ...history],
           selectedPlayerId: nextFree ? nextFree.id : selectedPlayerId,
           currentBid: 1

@@ -10,7 +10,7 @@ import { ExportModal } from './components/ExportModal';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 
 export const App: React.FC = () => {
-  const { isConfigured, activeMobileTab } = useAuctionStore();
+  const { isConfigured, activeMobileTab, setActiveMobileTab } = useAuctionStore();
 
   if (!isConfigured) {
     return <SetupScreen />;
@@ -43,13 +43,55 @@ export const App: React.FC = () => {
         </div>
 
         {/* MOBILE / TABLET SINGLE COLUMN WITH TAB SWITCHING */}
-        <div className="block lg:hidden h-[calc(100vh-130px)]">
+        <div className="block lg:hidden h-[calc(100vh-140px)] pb-16">
           {activeMobileTab === 'focus' && <PlayerFocusCard />}
           {activeMobileTab === 'list' && <PlayerList />}
           {(activeMobileTab === 'roster' || activeMobileTab === 'opponents') && <RosterAndOpponents />}
         </div>
 
       </main>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#100c30]/95 backdrop-blur-xl border-t border-white/10 px-3 py-2 flex items-center justify-around shadow-2xl">
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('focus')}
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition cursor-pointer ${
+            activeMobileTab === 'focus'
+              ? 'text-[#00f59b] font-black'
+              : 'text-slate-400 hover:text-white font-semibold'
+          }`}
+        >
+          <span className="text-lg">🎯</span>
+          <span className="text-[11px]">Battuta</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('list')}
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition cursor-pointer ${
+            activeMobileTab === 'list'
+              ? 'text-[#00f59b] font-black'
+              : 'text-slate-400 hover:text-white font-semibold'
+          }`}
+        >
+          <span className="text-lg">📋</span>
+          <span className="text-[11px]">Listone</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('roster')}
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition cursor-pointer ${
+            activeMobileTab === 'roster' || activeMobileTab === 'opponents'
+              ? 'text-[#00f59b] font-black'
+              : 'text-slate-400 hover:text-white font-semibold'
+          }`}
+        >
+          <span className="text-lg">🛡️</span>
+          <span className="text-[11px]">Mia Rosa</span>
+        </button>
+      </nav>
 
       {/* Floating Modals */}
       <OpponentsModal />

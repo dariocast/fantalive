@@ -23,6 +23,7 @@ export const SetupScreen: React.FC = () => {
 
   const [name, setName] = useState(settings.name || 'Asta #1');
   const [mode, setMode] = useState<AuctionMode>(settings.mode || 'classic');
+  const [trackingMode, setTrackingMode] = useState<'solo_me' | 'full_league'>(settings.trackingMode || 'solo_me');
   const [basePriceType, setBasePriceType] = useState<BasePriceType>(settings.basePriceType || '1credito');
   
   // Total budget state
@@ -92,6 +93,7 @@ export const SetupScreen: React.FC = () => {
     const newSettings: AuctionSettings = {
       name: name.trim() || 'Asta #1',
       mode,
+      trackingMode,
       basePriceType,
       totalBudget: finalBudget > 0 ? finalBudget : 500,
       modDifesa,
@@ -160,6 +162,57 @@ export const SetupScreen: React.FC = () => {
                 placeholder="Es. Asta #1"
                 className="w-full bg-[#1b1747] border border-[#00f59b]/50 focus:border-[#00f59b] focus:ring-2 focus:ring-[#00f59b]/20 rounded-full px-5 py-2.5 text-white font-medium outline-none transition placeholder:text-slate-500 shadow-inner"
               />
+            </div>
+          </div>
+
+          {/* Modalità d'Uso: Solo per Me vs Tutta la Lega */}
+          <div className="space-y-2">
+            <label className="text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <span>🎯 Modalità d'Uso</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTrackingMode('solo_me')}
+                className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                  trackingMode === 'solo_me'
+                    ? 'bg-[#00f59b]/15 border-[#00f59b] shadow-md shadow-emerald-950/40 text-white'
+                    : 'bg-[#1a1548]/60 border-white/10 text-slate-400 hover:bg-[#1a1548]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                    📱 Solo per Me (Fast)
+                  </span>
+                  {trackingMode === 'solo_me' && (
+                    <span className="text-[10px] bg-[#00f59b] text-black px-1.5 py-0.2 rounded-full font-black">
+                      CONSIGLIATO
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Traccia la tua rosa e target price. Durante l'asta basta 1 tap: <strong>Assegna a Me</strong>, <strong>Avversario</strong> o <strong>Salta</strong>.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTrackingMode('full_league')}
+                className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                  trackingMode === 'full_league'
+                    ? 'bg-[#00f59b]/15 border-[#00f59b] shadow-md shadow-emerald-950/40 text-white'
+                    : 'bg-[#1a1548]/60 border-white/10 text-slate-400 hover:bg-[#1a1548]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                    👥 Tutta la Lega
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Traccia dettagliatamente i crediti spesi e le rose complete di ogni singolo avversario.
+                </p>
+              </button>
             </div>
           </div>
 

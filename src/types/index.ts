@@ -54,6 +54,7 @@ export interface Manager {
 export interface AuctionSettings {
   name: string; // e.g. "Asta #1"
   mode: AuctionMode; // classic / mantra
+  trackingMode: 'solo_me' | 'full_league'; // 'solo_me' = fast companion (Me vs Opponents vs Unsold), 'full_league' = track each opponent individually
   basePriceType: BasePriceType; // 1credito / draft / quotazione
   totalBudget: number; // 250, 500, 1000, or custom
   modDifesa: boolean; // toggle

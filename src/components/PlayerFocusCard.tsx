@@ -33,7 +33,8 @@ import {
   ShieldAlert,
   Calendar,
   Zap,
-  HelpCircle
+  HelpCircle,
+  UserX
 } from 'lucide-react';
 
 export const PlayerFocusCard: React.FC = () => {
@@ -44,6 +45,7 @@ export const PlayerFocusCard: React.FC = () => {
     setBid, 
     incrementBid, 
     assignCurrentPlayer, 
+    assignToGenericOpponent,
     markCurrentUnsold, 
     undoLastAction, 
     history,
@@ -623,55 +625,70 @@ export const PlayerFocusCard: React.FC = () => {
             </p>
           )}
 
-          {/* SECONDARY ACTION: ASSEGNA AD AVVERSARI (1-9) */}
-          <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-purple-400" />
-                Assegna ad un Avversario (Tasti 1-{Math.min(9, opponents.length)})
-              </span>
-              <span>{currentBid} FM</span>
+          {/* OPPONENT ASSIGNMENT ACTIONS */}
+          {settings.trackingMode === 'solo_me' ? (
+            /* SOLO PER ME: FAST 1-TAP "PRESO DA AVVERSARIO" BUTTON */
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => assignToGenericOpponent()}
+                className="w-full py-4 rounded-3xl bg-gradient-to-r from-rose-600/90 to-orange-600/90 hover:from-rose-500 hover:to-orange-500 active:scale-[0.99] text-white font-black text-base sm:text-xl tracking-wide flex items-center justify-center gap-3 shadow-xl shadow-rose-950/40 transition cursor-pointer border border-rose-400/40"
+              >
+                <UserX className="w-6 h-6 stroke-[2.5]" />
+                <span>PRESO DA UN AVVERSARIO</span>
+              </button>
             </div>
+          ) : (
+            /* FULL LEAGUE: GRID OF DETAILED OPPONENT BUTTONS */
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-purple-400" />
+                  Assegna ad un Avversario (Tasti 1-{Math.min(9, opponents.length)})
+                </span>
+                <span>{currentBid} FM</span>
+              </div>
 
-            {/* Grid of Opponent Buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {opponents.map((opp, idx) => {
-                const oppSlotsRemaining = getRemainingSlotsForRole(opp, player.role, settings.rosterRequirements);
-                const oppCanBuy = opp.budget >= currentBid && oppSlotsRemaining > 0;
-                const oppMaxBid = getMaxBid(opp, settings.rosterRequirements);
+              {/* Grid of Opponent Buttons */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {opponents.map((opp, idx) => {
+                  const oppSlotsRemaining = getRemainingSlotsForRole(opp, player.role, settings.rosterRequirements);
+                  const oppCanBuy = opp.budget >= currentBid && oppSlotsRemaining > 0;
+                  const oppMaxBid = getMaxBid(opp, settings.rosterRequirements);
 
-                return (
-                  <button
-                    key={opp.id}
-                    type="button"
-                    disabled={!oppCanBuy}
-                    onClick={() => assignCurrentPlayer(opp.id)}
-                    className={`p-2.5 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
-                      oppCanBuy
-                        ? 'bg-[#1b1548] hover:bg-[#271e68] border-white/10 hover:border-purple-500/50 text-white cursor-pointer active:scale-95 shadow-sm'
-                        : 'bg-[#120e30]/50 border-white/5 text-slate-600 cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className="font-extrabold text-xs truncate flex-1 pr-1 text-slate-200">
-                        {opp.name}
-                      </span>
-                      {idx < 9 && (
-                        <kbd className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-mono font-bold shrink-0">
-                          {idx + 1}
-                        </kbd>
-                      )}
-                    </div>
+                  return (
+                    <button
+                      key={opp.id}
+                      type="button"
+                      disabled={!oppCanBuy}
+                      onClick={() => assignCurrentPlayer(opp.id)}
+                      className={`p-2.5 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
+                        oppCanBuy
+                          ? 'bg-[#1b1548] hover:bg-[#271e68] border-white/10 hover:border-purple-500/50 text-white cursor-pointer active:scale-95 shadow-sm'
+                          : 'bg-[#120e30]/50 border-white/5 text-slate-600 cursor-not-allowed opacity-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <span className="font-extrabold text-xs truncate flex-1 pr-1 text-slate-200">
+                          {opp.name}
+                        </span>
+                        {idx < 9 && (
+                          <kbd className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-mono font-bold shrink-0">
+                            {idx + 1}
+                          </kbd>
+                        )}
+                      </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="font-mono text-[#00f59b] font-bold">{opp.budget} FM</span>
-                      <span className="text-[10px] text-slate-400">Slot {player.role}: {oppSlotsRemaining}</span>
-                    </div>
-                  </button>
-                );
-              })}
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="font-mono text-[#00f59b] font-bold">{opp.budget} FM</span>
+                        <span className="text-[10px] text-slate-400">Slot {player.role}: {oppSlotsRemaining}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* TERTIARY ACTIONS: INVENDUTO / SALTA (ESC) */}
           <div className="pt-2">
