@@ -1,34 +1,71 @@
-import { Manager, Player, Role, AuctionSettings, AuctionType } from '../types';
+import { Manager, Player, Role, AuctionSettings, AuctionType, SortRule } from '../types';
 
-export function sortPlayerList(players: Player[], tipologia: AuctionType = 'alfabetico'): Player[] {
-  const roleOrder: Record<Role, number> = { P: 1, D: 2, C: 3, A: 4 };
-  const sorted = [...players];
+const roleOrder: Record<Role, number> = { P: 1, D: 2, C: 3, A: 4 };
 
-  if (tipologia === 'alfabetico') {
-    sorted.sort((a, b) => {
+export function comparePlayers(a: Player, b: Player, rule: SortRule): number {
+  const dir = rule.direction === 'desc' ? -1 : 1;
+  switch (rule.field) {
+    case 'role': {
       const rA = roleOrder[a.role] || 99;
       const rB = roleOrder[b.role] || 99;
-      if (rA !== rB) return rA - rB;
-      return a.name.localeCompare(b.name, 'it', { sensitivity: 'base' });
-    });
-  } else if (tipologia === 'random') {
+      return (rA - rB) * dir;
+    }
+    case 'name':
+      return a.name.localeCompare(b.name, 'it', { sensitivity: 'base' }) * dir;
+    case 'team':
+      return a.team.localeCompare(b.team, 'it', { sensitivity: 'base' }) * dir;
+    case 'slot':
+      return ((a.slot || 8) - (b.slot || 8)) * dir;
+    case 'pma':
+      return ((a.pma || 0) - (b.pma || 0)) * dir;
+    case 'pfc':
+      return ((a.pfc || 0) - (b.pfc || 0)) * dir;
+    case 'fantamedia':
+      return ((a.expectedFantamedia || 0) - (b.expectedFantamedia || 0)) * dir;
+    case 'titolarita':
+      return ((a.expectedTitolarita || 0) - (b.expectedTitolarita || 0)) * dir;
+    case 'none':
+    default:
+      return 0;
+  }
+}
+
+export function sortPlayerList(
+  players: Player[], 
+  tipologia: AuctionType = 'alfabetico',
+  customRules?: SortRule[]
+): Player[] {
+  const sorted = [...players];
+
+  if (tipologia === 'random') {
     for (let i = sorted.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
     }
-  } else {
-    // 'chiamata': role order -> slot (1 to 8) -> pma descending -> name
-    sorted.sort((a, b) => {
-      const rA = roleOrder[a.role] || 99;
-      const rB = roleOrder[b.role] || 99;
-      if (rA !== rB) return rA - rB;
-      const slotDiff = (a.slot || 8) - (b.slot || 8);
-      if (slotDiff !== 0) return slotDiff;
-      const pmaDiff = (b.pma || 0) - (a.pma || 0);
-      if (pmaDiff !== 0) return pmaDiff;
-      return a.name.localeCompare(b.name, 'it', { sensitivity: 'base' });
-    });
+    return sorted;
   }
+
+  const rules: SortRule[] = customRules && customRules.length > 0
+    ? customRules
+    : tipologia === 'alfabetico'
+    ? [
+        { field: 'role', direction: 'asc' },
+        { field: 'name', direction: 'asc' }
+      ]
+    : [
+        { field: 'role', direction: 'asc' },
+        { field: 'slot', direction: 'asc' },
+        { field: 'pma', direction: 'desc' }
+      ];
+
+  sorted.sort((a, b) => {
+    for (const rule of rules) {
+      if (rule.field === 'none') continue;
+      const res = comparePlayers(a, b, rule);
+      if (res !== 0) return res;
+    }
+    return a.name.localeCompare(b.name, 'it', { sensitivity: 'base' });
+  });
 
   return sorted;
 }

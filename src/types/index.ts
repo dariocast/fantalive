@@ -52,6 +52,14 @@ export interface Manager {
   roster: ManagerRoster;
 }
 
+export type SortField = 'role' | 'name' | 'slot' | 'pma' | 'pfc' | 'team' | 'fantamedia' | 'titolarita' | 'none';
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortRule {
+  field: SortField;
+  direction: SortDirection;
+}
+
 export interface AuctionSettings {
   name: string; // e.g. "Asta #1"
   mode: AuctionMode; // classic / mantra
@@ -61,6 +69,7 @@ export interface AuctionSettings {
   modDifesa: boolean; // toggle
   imbattibilitaPortiere: boolean; // toggle
   tipologiaAsta: AuctionType; // chiamata / random / alfabetico
+  sortRules?: SortRule[]; // Cascading sort criteria
   participantsCount: number; // 6, 8, 10, 12, or custom
   rosterRequirements: Record<Role, number>; // { P: 3, D: 8, C: 8, A: 6 }
 }

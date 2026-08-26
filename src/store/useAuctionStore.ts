@@ -206,7 +206,7 @@ export const useAuctionStore = create<AuctionState>()(
         }
 
         const rawList = customPlayersList && customPlayersList.length > 0 ? customPlayersList : defaultPlayers;
-        const sortedList = sortPlayerList(rawList, settings.tipologiaAsta);
+        const sortedList = sortPlayerList(rawList, settings.tipologiaAsta, settings.sortRules);
         
         // Clean any assignments
         const freshPlayers = sortedList.map((p) => ({
@@ -503,7 +503,7 @@ export const useAuctionStore = create<AuctionState>()(
       setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
 
       loadCustomPlayers: (players) => {
-        const sorted = sortPlayerList(players, get().settings.tipologiaAsta);
+        const sorted = sortPlayerList(players, get().settings.tipologiaAsta, get().settings.sortRules);
         set({
           players: sorted,
           selectedPlayerId: sorted[0]?.id || null

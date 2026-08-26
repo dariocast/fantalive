@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuctionStore } from '../store/useAuctionStore';
-import { AuctionSettings, AuctionMode, BasePriceType, AuctionType, Role, Player } from '../types';
+import { AuctionSettings, AuctionMode, BasePriceType, AuctionType, Role, Player, SortRule, SortField, SortDirection } from '../types';
 import { parseExcelFile } from '../utils/excelParser';
 import defaultPlayersRaw from '../data/defaultPlayers.json';
 import { 
@@ -65,8 +65,48 @@ export const SetupScreen: React.FC = () => {
   const [modDifesa, setModDifesa] = useState(settings.modDifesa || false);
   const [imbattibilitaPortiere, setImbattibilitaPortiere] = useState(settings.imbattibilitaPortiere !== undefined ? settings.imbattibilitaPortiere : true);
 
-  // Tipologia asta
-  const [tipologiaAsta, setTipologiaAsta] = useState<AuctionType>(settings.tipologiaAsta || 'chiamata');
+  // Tipologia asta & Cascading sort rules
+  const [tipologiaAsta, setTipologiaAsta] = useState<AuctionType>(settings.tipologiaAsta || 'alfabetico');
+  const [sortPreset, setSortPreset] = useState<'alfabetico_ruolo' | 'alfabetico_globale' | 'top_ruolo' | 'squadra' | 'random' | 'custom'>('alfabetico_ruolo');
+  const [sortRules, setSortRules] = useState<SortRule[]>(
+    settings.sortRules || [
+      { field: 'role', direction: 'asc' },
+      { field: 'name', direction: 'asc' }
+    ]
+  );
+
+  const handlePresetChange = (preset: 'alfabetico_ruolo' | 'alfabetico_globale' | 'top_ruolo' | 'squadra' | 'random' | 'custom') => {
+    setSortPreset(preset);
+    if (preset === 'alfabetico_ruolo') {
+      setTipologiaAsta('alfabetico');
+      setSortRules([
+        { field: 'role', direction: 'asc' },
+        { field: 'name', direction: 'asc' }
+      ]);
+    } else if (preset === 'alfabetico_globale') {
+      setTipologiaAsta('alfabetico');
+      setSortRules([
+        { field: 'name', direction: 'asc' }
+      ]);
+    } else if (preset === 'top_ruolo') {
+      setTipologiaAsta('chiamata');
+      setSortRules([
+        { field: 'role', direction: 'asc' },
+        { field: 'slot', direction: 'asc' },
+        { field: 'pma', direction: 'desc' }
+      ]);
+    } else if (preset === 'squadra') {
+      setTipologiaAsta('alfabetico');
+      setSortRules([
+        { field: 'team', direction: 'asc' },
+        { field: 'role', direction: 'asc' },
+        { field: 'name', direction: 'asc' }
+      ]);
+    } else if (preset === 'random') {
+      setTipologiaAsta('random');
+      setSortRules([]);
+    }
+  };
 
   // Num partecipanti
   const [participantsPreset, setParticipantsPreset] = useState<number | 'custom'>(
@@ -128,7 +168,8 @@ export const SetupScreen: React.FC = () => {
       modDifesa,
       imbattibilitaPortiere,
       tipologiaAsta,
-      participantsCount: finalCount > 0 ? finalCount : 8,
+      sortRules,
+      participantsCount: trackingMode === 'solo_me' ? 8 : (finalCount > 0 ? finalCount : 8),
       rosterRequirements: rosterReq
     };
 
@@ -416,105 +457,231 @@ export const SetupScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Tipologia d'asta */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <label className="text-slate-300 font-semibold w-36 shrink-0 text-base">
-              Tipologia d'asta:
-            </label>
-            <div className="flex flex-wrap gap-2 flex-1">
+          {/* Ordine di Chiamata & Regole in Cascata */}
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <label className="text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <span>🔀 Ordine di Chiamata in Battuta</span>
+              </label>
+              <span className="text-[11px] text-[#00f59b] font-semibold">Regole in cascata</span>
+            </div>
+
+            {/* Presets Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setTipologiaAsta('chiamata')}
-                className={`px-4 py-2 rounded-full font-medium text-sm transition-all border ${
-                  tipologiaAsta === 'chiamata'
-                    ? 'border-[#00f59b] text-[#00f59b] bg-[#00f59b]/10 font-bold'
-                    : 'border-purple-500/30 bg-[#211c52]/60 text-purple-200/80 hover:bg-[#211c52]'
+                onClick={() => handlePresetChange('alfabetico_ruolo')}
+                className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                  sortPreset === 'alfabetico_ruolo'
+                    ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                    : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
                 }`}
               >
-                A chiamata
+                <span className="font-extrabold text-sm mb-0.5 text-white">🅰️ Alfabetico / Ruolo</span>
+                <span className="text-[10px] text-slate-400">P ➔ D ➔ C ➔ A, Nome A-Z</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setTipologiaAsta('random')}
-                className={`px-4 py-2 rounded-full font-medium text-sm transition-all border ${
-                  tipologiaAsta === 'random'
-                    ? 'border-[#00f59b] text-[#00f59b] bg-[#00f59b]/10 font-bold'
-                    : 'border-purple-500/30 bg-[#211c52]/60 text-purple-200/80 hover:bg-[#211c52]'
+                onClick={() => handlePresetChange('top_ruolo')}
+                className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                  sortPreset === 'top_ruolo'
+                    ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                    : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
                 }`}
               >
-                Random
+                <span className="font-extrabold text-sm mb-0.5 text-white">🏆 Top per Ruolo</span>
+                <span className="text-[10px] text-slate-400">Ruolo ➔ Slot 1-8 ➔ PMA</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setTipologiaAsta('alfabetico')}
-                className={`px-4 py-2 rounded-full font-medium text-sm transition-all border ${
-                  tipologiaAsta === 'alfabetico'
-                    ? 'border-[#00f59b] text-[#00f59b] bg-[#00f59b]/10 font-bold'
-                    : 'border-purple-500/30 bg-[#211c52]/60 text-purple-200/80 hover:bg-[#211c52]'
+                onClick={() => handlePresetChange('alfabetico_globale')}
+                className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                  sortPreset === 'alfabetico_globale'
+                    ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                    : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
                 }`}
               >
-                Ordine alfabetico
+                <span className="font-extrabold text-sm mb-0.5 text-white">🔤 Alfabetico Globale</span>
+                <span className="text-[10px] text-slate-400">Tutti i ruoli insieme A-Z</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handlePresetChange('squadra')}
+                className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                  sortPreset === 'squadra'
+                    ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                    : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
+                }`}
+              >
+                <span className="font-extrabold text-sm mb-0.5 text-white">🏟️ Per Squadra</span>
+                <span className="text-[10px] text-slate-400">Squadra A-Z ➔ Ruolo ➔ Nome</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handlePresetChange('random')}
+                className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                  sortPreset === 'random'
+                    ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                    : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
+                }`}
+              >
+                <span className="font-extrabold text-sm mb-0.5 text-white">🎲 Casuale (Random)</span>
+                <span className="text-[10px] text-slate-400">Sorteggio casuale puro</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handlePresetChange('custom')}
+                className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                  sortPreset === 'custom'
+                    ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                    : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
+                }`}
+              >
+                <span className="font-extrabold text-sm mb-0.5 text-white">⚙️ Personalizzato</span>
+                <span className="text-[10px] text-slate-400">Regole manuali 1°, 2°, 3°</span>
               </button>
             </div>
+
+            {/* Custom Cascading Rules Editor */}
+            {sortPreset === 'custom' && (
+              <div className="p-3.5 rounded-2xl bg-[#0e0b29] border border-white/10 space-y-2.5 text-xs animate-fadeIn">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Definisci i criteri in ordine di priorità:
+                </div>
+
+                {/* Rule 1 */}
+                <div className="flex items-center gap-2">
+                  <span className="w-20 font-bold text-[#00f59b]">1° Criterio:</span>
+                  <select
+                    value={sortRules[0]?.field || 'role'}
+                    onChange={(e) => {
+                      const updated = [...sortRules];
+                      updated[0] = { field: e.target.value as SortField, direction: 'asc' };
+                      setSortRules(updated);
+                    }}
+                    className="flex-1 bg-[#1c174d] border border-white/10 rounded-xl px-3 py-1.5 text-white font-medium outline-none focus:border-[#00f59b]"
+                  >
+                    <option value="role">Ruolo (P ➔ D ➔ C ➔ A)</option>
+                    <option value="team">Squadra (A-Z)</option>
+                    <option value="slot">Slot (1° ➔ 8°)</option>
+                    <option value="name">Nome (A ➔ Z)</option>
+                    <option value="pma">Prezzo Medio PMA (Alto ➔ Basso)</option>
+                  </select>
+                </div>
+
+                {/* Rule 2 */}
+                <div className="flex items-center gap-2">
+                  <span className="w-20 font-bold text-cyan-300">2° Criterio:</span>
+                  <select
+                    value={sortRules[1]?.field || 'name'}
+                    onChange={(e) => {
+                      const updated = [...sortRules];
+                      const f = e.target.value as SortField;
+                      const dir = (f === 'pma' || f === 'pfc' || f === 'fantamedia' || f === 'titolarita') ? 'desc' : 'asc';
+                      updated[1] = { field: f, direction: dir };
+                      setSortRules(updated);
+                    }}
+                    className="flex-1 bg-[#1c174d] border border-white/10 rounded-xl px-3 py-1.5 text-white font-medium outline-none focus:border-[#00f59b]"
+                  >
+                    <option value="name">Nome (A ➔ Z)</option>
+                    <option value="pma">PMA Prezzo Medio (Alto ➔ Basso)</option>
+                    <option value="pfc">PFC Valore Algoritmo (Alto ➔ Basso)</option>
+                    <option value="slot">Slot (1° ➔ 8°)</option>
+                    <option value="team">Squadra (A-Z)</option>
+                    <option value="fantamedia">Fantamedia Attesa (Alta ➔ Bassa)</option>
+                    <option value="titolarita">Titolarità (Alta ➔ Bassa)</option>
+                    <option value="none">Nessun 2° criterio</option>
+                  </select>
+                </div>
+
+                {/* Rule 3 */}
+                <div className="flex items-center gap-2">
+                  <span className="w-20 font-bold text-amber-300">3° Criterio:</span>
+                  <select
+                    value={sortRules[2]?.field || 'none'}
+                    onChange={(e) => {
+                      const updated = [...sortRules];
+                      const f = e.target.value as SortField;
+                      const dir = (f === 'pma' || f === 'pfc') ? 'desc' : 'asc';
+                      updated[2] = { field: f, direction: dir };
+                      setSortRules(updated);
+                    }}
+                    className="flex-1 bg-[#1c174d] border border-white/10 rounded-xl px-3 py-1.5 text-white font-medium outline-none focus:border-[#00f59b]"
+                  >
+                    <option value="none">Nessun 3° criterio</option>
+                    <option value="name">Nome (A ➔ Z)</option>
+                    <option value="pma">PMA Prezzo Medio (Alto ➔ Basso)</option>
+                    <option value="pfc">PFC Valore Algoritmo (Alto ➔ Basso)</option>
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Num partecipanti */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <label className="text-slate-300 font-semibold w-36 shrink-0 text-base">
-              Num partecipanti:
-            </label>
-            <div className="flex flex-wrap items-center gap-2 flex-1">
-              {[6, 8, 10, 12].map((num) => (
+          {/* Num partecipanti (Only shown when tracking full league) */}
+          {trackingMode === 'full_league' && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <label className="text-slate-300 font-semibold w-36 shrink-0 text-base">
+                Num partecipanti:
+              </label>
+              <div className="flex flex-wrap items-center gap-2 flex-1">
+                {[6, 8, 10, 12].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setParticipantsPreset(num)}
+                    className={`w-10 h-10 rounded-full font-bold text-sm transition-all border flex items-center justify-center cursor-pointer ${
+                      participantsPreset === num
+                        ? 'border-[#00f59b] text-[#00f59b] bg-[#00f59b]/10 shadow-sm'
+                        : 'border-purple-500/30 bg-[#211c52]/60 text-purple-200/80 hover:bg-[#211c52]'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+                
                 <button
-                  key={num}
                   type="button"
-                  onClick={() => setParticipantsPreset(num)}
-                  className={`w-10 h-10 rounded-full font-bold text-sm transition-all border flex items-center justify-center ${
-                    participantsPreset === num
-                      ? 'border-[#00f59b] text-[#00f59b] bg-[#00f59b]/10 shadow-sm'
+                  onClick={() => setParticipantsPreset('custom')}
+                  className={`px-4 py-2 rounded-full font-medium text-sm transition-all border cursor-pointer ${
+                    participantsPreset === 'custom'
+                      ? 'border-[#00f59b] text-[#00f59b] bg-[#00f59b]/10 font-bold'
                       : 'border-purple-500/30 bg-[#211c52]/60 text-purple-200/80 hover:bg-[#211c52]'
                   }`}
                 >
-                  {num}
+                  Scrivi
                 </button>
-              ))}
-              
-              <button
-                type="button"
-                onClick={() => setParticipantsPreset('custom')}
-                className={`px-4 py-2 rounded-full font-medium text-sm transition-all border ${
-                  participantsPreset === 'custom'
-                    ? 'border-[#00f59b] text-[#00f59b] bg-[#00f59b]/10 font-bold'
-                    : 'border-purple-500/30 bg-[#211c52]/60 text-purple-200/80 hover:bg-[#211c52]'
-                }`}
-              >
-                Scrivi
-              </button>
 
-              {participantsPreset === 'custom' && (
-                <input
-                  type="number"
-                  min="2"
-                  max="20"
-                  value={customParticipants}
-                  onChange={(e) => setCustomParticipants(parseInt(e.target.value) || 8)}
-                  className="w-20 bg-[#1b1747] border border-[#00f59b] rounded-full px-3 py-1.5 text-center text-white font-bold text-sm outline-none"
-                  placeholder="Num"
-                />
-              )}
+                {participantsPreset === 'custom' && (
+                  <input
+                    type="number"
+                    min="2"
+                    max="20"
+                    value={customParticipants}
+                    onChange={(e) => setCustomParticipants(parseInt(e.target.value) || 8)}
+                    className="w-20 bg-[#1b1747] border border-[#00f59b] rounded-full px-3 py-1.5 text-center text-white font-bold text-sm outline-none"
+                    placeholder="Num"
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* ADVANCED SETTINGS ACCORDION (Managers Names, Roster Rules, Listone Upload) */}
+          {/* ADVANCED SETTINGS ACCORDION (Slot Rosa Limits, Listone Excel, and Opponents if Full League) */}
           <div className="pt-2">
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full flex items-center justify-between py-2.5 px-4 rounded-2xl bg-[#1b164a]/80 hover:bg-[#1b164a] border border-white/10 text-slate-300 text-xs sm:text-sm font-semibold transition"
+              className="w-full flex items-center justify-between py-2.5 px-4 rounded-2xl bg-[#1b164a]/80 hover:bg-[#1b164a] border border-white/10 text-slate-300 text-xs sm:text-sm font-semibold transition cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-[#00f59b]" />
-                Personalizza Nomi Partecipanti, Slot Rosa & Listone Excel
+                {trackingMode === 'solo_me' ? 'Personalizza Slot Rosa & Listone Excel' : 'Personalizza Nomi Partecipanti, Slot Rosa & Listone Excel'}
               </span>
               {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -570,33 +737,35 @@ export const SetupScreen: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Managers Names */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-cyan-400" />
-                    Nomi Partecipanti ({actualParticipants})
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                    {Array.from({ length: actualParticipants }).map((_, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-[#1a1548] px-3 py-1.5 rounded-xl border border-white/5">
-                        <span className={`text-xs font-bold w-6 ${idx === 0 ? 'text-[#00f59b]' : 'text-slate-400'}`}>
-                          {idx === 0 ? 'TU' : `#${idx}`}
-                        </span>
-                        <input
-                          type="text"
-                          value={managerNames[idx] || (idx === 0 ? 'Io (Tu)' : `Avversario ${idx}`)}
-                          onChange={(e) => {
-                            const updated = [...managerNames];
-                            updated[idx] = e.target.value;
-                            setManagerNames(updated);
-                          }}
-                          className="flex-1 bg-transparent text-xs font-medium text-white outline-none"
-                          placeholder={idx === 0 ? 'Il tuo nome' : `Avversario ${idx}`}
-                        />
-                      </div>
-                    ))}
+                {/* Managers Names (Only shown when tracking full league) */}
+                {trackingMode === 'full_league' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-cyan-400" />
+                      Nomi Partecipanti ({actualParticipants})
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                      {Array.from({ length: actualParticipants }).map((_, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-[#1a1548] px-3 py-1.5 rounded-xl border border-white/5">
+                          <span className={`text-xs font-bold w-6 ${idx === 0 ? 'text-[#00f59b]' : 'text-slate-400'}`}>
+                            {idx === 0 ? 'TU' : `#${idx}`}
+                          </span>
+                          <input
+                            type="text"
+                            value={managerNames[idx] || (idx === 0 ? 'Io (Tu)' : `Avversario ${idx}`)}
+                            onChange={(e) => {
+                              const updated = [...managerNames];
+                              updated[idx] = e.target.value;
+                              setManagerNames(updated);
+                            }}
+                            className="flex-1 bg-transparent text-xs font-medium text-white outline-none"
+                            placeholder={idx === 0 ? 'Il tuo nome' : `Avversario ${idx}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
               </div>
             )}
