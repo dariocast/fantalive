@@ -15,7 +15,11 @@ import {
   UserCheck,
   Zap,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  Check, 
+  X, 
+  SlidersHorizontal,
+  Flame
 } from 'lucide-react';
 
 export const PlayerList: React.FC = () => {
@@ -28,7 +32,9 @@ export const PlayerList: React.FC = () => {
     managers,
     settings,
     probabiliData,
-    reintroduceAllUnsold
+    reintroduceAllUnsold,
+    currentBid,
+    setActiveMobileTab
   } = useAuctionStore();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +165,33 @@ export const PlayerList: React.FC = () => {
       {/* Top Search & Filter Bar */}
       <div className="p-3 sm:p-4 border-b border-white/10 space-y-3 bg-[#16123d]">
         
+        {/* Pinned Active Player Mini-Card */}
+        {(() => {
+          const activePlayer = players.find((p) => String(p.id) === String(selectedPlayerId));
+          if (!activePlayer) return null;
+          return (
+            <div 
+              onClick={() => {
+                selectPlayer(activePlayer.id);
+                setActiveMobileTab('focus');
+              }}
+              className="p-2 px-3 rounded-2xl bg-[#1e184f] hover:bg-[#282068] border border-[#00f59b]/40 hover:border-[#00f59b] transition flex items-center justify-between cursor-pointer shadow-md"
+              title="Clicca per aprire la scheda di battuta"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs">🎯</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">In Battuta:</span>
+                <span className="text-xs font-black text-white truncate">{activePlayer.name}</span>
+                <span className="text-[10px] text-slate-400 shrink-0">({activePlayer.team})</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-mono font-black text-[#00f59b] shrink-0">
+                <Flame className="w-3.5 h-3.5 animate-pulse" />
+                <span>{currentBid} FM</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Search Input */}
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />

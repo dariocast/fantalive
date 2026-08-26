@@ -10,7 +10,7 @@ import { ExportModal } from './components/ExportModal';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 
 export const App: React.FC = () => {
-  const { isConfigured, activeMobileTab, setActiveMobileTab } = useAuctionStore();
+  const { isConfigured, activeMobileTab, setActiveMobileTab, settings } = useAuctionStore();
 
   if (!isConfigured) {
     return <SetupScreen />;
@@ -52,11 +52,11 @@ export const App: React.FC = () => {
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#100c30]/95 backdrop-blur-xl border-t border-white/10 px-3 py-2 flex items-center justify-around shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#100c30]/95 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb">
         <button
           type="button"
           onClick={() => setActiveMobileTab('focus')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-2xl transition cursor-pointer ${
             activeMobileTab === 'focus'
               ? 'text-[#00f59b] font-black'
               : 'text-slate-400 hover:text-white font-semibold'
@@ -69,7 +69,7 @@ export const App: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveMobileTab('list')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-2xl transition cursor-pointer ${
             activeMobileTab === 'list'
               ? 'text-[#00f59b] font-black'
               : 'text-slate-400 hover:text-white font-semibold'
@@ -82,14 +82,27 @@ export const App: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveMobileTab('roster')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition cursor-pointer ${
-            activeMobileTab === 'roster' || activeMobileTab === 'opponents'
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-2xl transition cursor-pointer ${
+            activeMobileTab === 'roster'
               ? 'text-[#00f59b] font-black'
               : 'text-slate-400 hover:text-white font-semibold'
           }`}
         >
           <span className="text-lg">🛡️</span>
           <span className="text-[11px]">Mia Rosa</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('opponents')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-2xl transition cursor-pointer ${
+            activeMobileTab === 'opponents'
+              ? 'text-[#00f59b] font-black'
+              : 'text-slate-400 hover:text-white font-semibold'
+          }`}
+        >
+          <span className="text-lg">{settings.trackingMode === 'solo_me' ? '🔄' : '👥'}</span>
+          <span className="text-[11px]">{settings.trackingMode === 'solo_me' ? 'Invenduti' : 'Avversari'}</span>
         </button>
       </nav>
 

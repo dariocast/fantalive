@@ -153,63 +153,87 @@ export const PlayerFocusCard: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-[#120e33]/90 border border-white/10 rounded-3xl overflow-hidden shadow-2xl shadow-purple-950/30">
       
-      {/* Top Banner & Player Navigation Header */}
-      <div className="p-4 sm:p-5 border-b border-white/10 bg-gradient-to-r from-[#17133f] via-[#1d174d] to-[#17133f] flex items-center justify-between gap-3">
+      {/* STICKY TOP BANNER & PINNED PLAYER IDENTITY (ALWAYS VISIBLE DURING SCROLL) */}
+      <div className="sticky top-0 z-30 p-3 sm:p-4 border-b border-white/10 bg-[#15103d]/98 backdrop-blur-xl flex items-center justify-between gap-2 shadow-lg rounded-t-3xl">
         
-        {/* Prev / Next navigation */}
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => selectNextPlayer('prev')}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition flex items-center gap-1 text-xs font-bold"
-            title="Calciatore Precedente (Freccia Su o K)"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Prec</span>
-          </button>
-          <button
-            onClick={() => selectNextPlayer('next')}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition flex items-center gap-1 text-xs font-bold"
-            title="Calciatore Successivo (Freccia Giù o J)"
-          >
-            <span className="hidden sm:inline">Succ</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+        {/* Left: Prev / Next navigation + Quick Player Mini-Identity */}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => selectNextPlayer('prev')}
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition flex items-center gap-1 text-xs font-bold"
+              title="Calciatore Precedente (Freccia Su o K)"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Prec</span>
+            </button>
+            <button
+              onClick={() => selectNextPlayer('next')}
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition flex items-center gap-1 text-xs font-bold"
+              title="Calciatore Successivo (Freccia Giù o J)"
+            >
+              <span className="hidden sm:inline">Succ</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Pinned Mini Player Capsule */}
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 pl-1 border-l border-white/10">
+            <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${roleStyle.badge}`}>
+              {player.role}
+            </span>
+            <div className="min-w-0 truncate">
+              <span className="font-black text-white text-xs sm:text-sm tracking-tight truncate block">
+                {player.name}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {player.team} • {player.slot}° sl
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Status indicator badge (Free / Assigned / Unsold) */}
-        <div>
-          {isAssigned ? (
-            isUnsold ? (
-              <span className="px-3.5 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-                <X className="w-3.5 h-3.5" />
-                Invenduto
-              </span>
+        {/* Right: Current Price Badge + Status indicator + Undo */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Current Bid Display Pill */}
+          <div className="px-2.5 py-1 rounded-xl bg-[#00f59b]/20 border border-[#00f59b]/40 flex items-center gap-1 text-xs font-mono font-black text-[#00f59b]">
+            <Flame className="w-3.5 h-3.5 animate-pulse shrink-0" />
+            <span>{currentBid} FM</span>
+          </div>
+
+          {/* Status indicator badge (Free / Assigned / Unsold) */}
+          <div className="hidden sm:block">
+            {isAssigned ? (
+              isUnsold ? (
+                <span className="px-2.5 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-black uppercase tracking-wider flex items-center gap-1">
+                  <X className="w-3 h-3" />
+                  Invenduto
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[#00f59b] text-[11px] font-black uppercase tracking-wider flex items-center gap-1 truncate max-w-[150px]">
+                  <Check className="w-3 h-3 shrink-0" />
+                  {assignedManager?.name || 'Assegnato'} ({player.purchasePrice} FM)
+                </span>
+              )
             ) : (
-              <span className="px-3.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[#00f59b] text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5" />
-                Acquistato da {assignedManager?.name} per {player.purchasePrice} FM
+              <span className="px-2.5 py-1 rounded-full bg-[#00f59b]/20 border border-[#00f59b]/40 text-[#00f59b] text-[11px] font-black uppercase tracking-wider flex items-center gap-1 animate-pulse">
+                In Battuta
               </span>
-            )
-          ) : (
-            <span className="px-3.5 py-1 rounded-full bg-[#00f59b]/20 border border-[#00f59b]/40 text-[#00f59b] text-xs font-black uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-              <Flame className="w-3.5 h-3.5" />
-              In Battuta Live
-            </span>
+            )}
+          </div>
+
+          {/* Undo Action (Ctrl+Z) */}
+          {history.length > 0 && (
+            <button
+              onClick={undoLastAction}
+              className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition flex items-center gap-1 shadow-sm"
+              title="Annulla ultima operazione (Ctrl+Z)"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline text-[11px]">Undo</span>
+            </button>
           )}
         </div>
-
-        {/* Undo Action (Ctrl+Z) */}
-        {history.length > 0 && (
-          <button
-            onClick={undoLastAction}
-            className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
-            title="Annulla ultima operazione (Ctrl+Z)"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Undo</span>
-            <kbd className="text-[10px] bg-black/40 px-1.5 py-0.5 rounded text-amber-200">Ctrl+Z</kbd>
-          </button>
-        )}
 
       </div>
 

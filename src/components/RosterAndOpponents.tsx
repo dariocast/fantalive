@@ -34,11 +34,22 @@ export const RosterAndOpponents: React.FC = () => {
     selectPlayer, 
     undoLastAction,
     reintroduceAllUnsold,
-    reintroducePlayer
+    reintroducePlayer,
+    activeMobileTab
   } = useAuctionStore();
 
-  const [activeTab, setActiveTab] = useState<'my_roster' | 'opponents' | 'unsold' | 'feed'>('my_roster');
+  const [activeTab, setActiveTab] = useState<'my_roster' | 'opponents' | 'unsold' | 'feed'>(
+    activeMobileTab === 'opponents' ? 'opponents' : 'my_roster'
+  );
   const [unsoldRoleFilter, setUnsoldRoleFilter] = useState<'ALL' | Role>('ALL');
+
+  React.useEffect(() => {
+    if (activeMobileTab === 'opponents') {
+      setActiveTab('opponents');
+    } else if (activeMobileTab === 'roster') {
+      setActiveTab('my_roster');
+    }
+  }, [activeMobileTab]);
 
   const user = managers.find((m) => m.isUser) || managers[0];
   const opponents = managers.filter((m) => !m.isUser);

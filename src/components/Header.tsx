@@ -14,7 +14,8 @@ import {
   Layers,
   Sparkles,
   TrendingUp,
-  LayoutGrid
+  LayoutGrid,
+  Smartphone
 } from 'lucide-react';
 import { getMaxBid, getTotalRemainingSlots, getAverageBudgetPerRemainingSlot } from '../utils/calculations';
 
@@ -37,6 +38,33 @@ export const Header: React.FC = () => {
 
   const user = managers.find((m) => m.isUser) || managers[0];
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      if (isIos) {
+        alert('Per installare come app su iPhone/iPad:\n1. Tocca il tasto Condividi 📤 in basso in Safari\n2. Scorri e tocca "Aggiungi alla schermata Home" ➕');
+      } else {
+        alert('Per installare l\'app:\nApri il menu del browser (⋮ in alto a destra) e seleziona "Installa app" o "Aggiungi a schermata Home".');
+      }
+    }
+  };
 
   const totalRequiredSlots = Object.values(settings.rosterRequirements).reduce((a, b) => a + b, 0);
   const userSlotsRemaining = user ? getTotalRemainingSlots(user, settings.rosterRequirements) : 0;
@@ -194,6 +222,16 @@ export const Header: React.FC = () => {
           >
             <Users className="w-4 h-4 text-cyan-400" />
             <span>Tabellone Completo</span>
+          </button>
+
+          {/* PWA Install Button */}
+          <button
+            onClick={handleInstallPwa}
+            className="px-3 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/40 text-purple-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            title="Installa come Web App (PWA)"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-purple-300" />
+            <span className="hidden lg:inline">Installa App</span>
           </button>
 
           {/* Export Button */}

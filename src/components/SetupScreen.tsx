@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuctionStore } from '../store/useAuctionStore';
 import { AuctionSettings, AuctionMode, BasePriceType, AuctionType, Role, Player } from '../types';
 import { parseExcelFile } from '../utils/excelParser';
@@ -15,11 +15,40 @@ import {
   ChevronDown, 
   ChevronUp, 
   Sparkles,
-  Play
+  Play,
+  Smartphone
 } from 'lucide-react';
 
 export const SetupScreen: React.FC = () => {
   const { settings, initAuction, isConfigured, loadCustomPlayers } = useAuctionStore();
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      if (isIos) {
+        alert('Per installare come app su iPhone/iPad:\n1. Tocca il tasto Condividi 📤 in Safari\n2. Scorri e tocca "Aggiungi alla schermata Home" ➕');
+      } else {
+        alert('Per installare l\'app:\nApri il menu del browser (⋮ in alto a destra) e seleziona "Installa app" o "Aggiungi a schermata Home".');
+      }
+    }
+  };
 
   const [name, setName] = useState(settings.name || 'Asta #1');
   const [mode, setMode] = useState<AuctionMode>(settings.mode || 'classic');
@@ -135,15 +164,28 @@ export const SetupScreen: React.FC = () => {
             </div>
           </div>
 
-          {isConfigured && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleResume}
-              className="px-4 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-purple-900/30"
+              type="button"
+              onClick={handleInstallPwa}
+              className="px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Installa come Web App (PWA) sul tuo dispositivo"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              Riprendi Asta
+              <Smartphone className="w-3.5 h-3.5 text-purple-300" />
+              <span className="hidden sm:inline">Installa App</span>
             </button>
-          )}
+
+            {isConfigured && (
+              <button
+                type="button"
+                onClick={handleResume}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-950/30 cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                Riprendi Asta
+              </button>
+            )}
+          </div>
         </div>
 
         {/* FORM CONTENT (Matching screenshot) */}
