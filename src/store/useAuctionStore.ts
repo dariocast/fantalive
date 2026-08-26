@@ -4,7 +4,7 @@ import { Player, Manager, AuctionSettings, AuctionHistoryItem, FilterState, Role
 import defaultPlayersRaw from '../data/defaultPlayers.json';
 import defaultProbabiliRaw from '../data/defaultProbabili.json';
 import { soundManager } from '../utils/audio';
-import { getCreditsFromPMA } from '../utils/calculations';
+import { getCreditsFromPMA, sortPlayerList } from '../utils/calculations';
 import { parseProbabiliAndInfortunatiHtml, ProbabiliResponse, ProbabiliPlayerInfo } from '../utils/probabiliScraper';
 import confetti from 'canvas-confetti';
 
@@ -205,9 +205,11 @@ export const useAuctionStore = create<AuctionState>()(
           });
         }
 
-        const playerList = customPlayersList && customPlayersList.length > 0 ? customPlayersList : defaultPlayers;
+        const rawList = customPlayersList && customPlayersList.length > 0 ? customPlayersList : defaultPlayers;
+        const sortedList = sortPlayerList(rawList, settings.tipologiaAsta);
+        
         // Clean any assignments
-        const freshPlayers = playerList.map((p) => ({
+        const freshPlayers = sortedList.map((p) => ({
           ...p,
           assignedTo: null,
           purchasePrice: null,
@@ -501,9 +503,10 @@ export const useAuctionStore = create<AuctionState>()(
       setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
 
       loadCustomPlayers: (players) => {
+        const sorted = sortPlayerList(players, get().settings.tipologiaAsta);
         set({
-          players,
-          selectedPlayerId: players[0]?.id || null
+          players: sorted,
+          selectedPlayerId: sorted[0]?.id || null
         });
       },
 
@@ -512,15 +515,23 @@ export const useAuctionStore = create<AuctionState>()(
         if (players.length === 0) return;
 
         const currentIndex = players.findIndex((p) => String(p.id) === String(selectedPlayerId));
-        let nextIndex = 0;
-        if (direction === 'next') {
-          nextIndex = currentIndex < players.length - 1 ? currentIndex + 1 : 0;
-        } else {
-          nextIndex = currentIndex > 0 ? currentIndex - 1 : players.length - 1;
+        if (currentIndex === -1) {
+          const firstFree = players.find((p) => !p.assignedTo && p.assignedTo !== 'UNSOLD') || players[0];
+          get().selectPlayer(firstFree.id);
+          return;
         }
-        const nextPlayer = players[nextIndex];
-        if (nextPlayer) {
-          get().selectPlayer(nextPlayer.id);
+
+        // Find next / previous free player in list sequence
+        if (direction === 'next') {
+          const nextFree = players.slice(currentIndex + 1).find((p) => !p.assignedTo && p.assignedTo !== 'UNSOLD')
+            || players.find((p) => !p.assignedTo && p.assignedTo !== 'UNSOLD')
+            || (currentIndex < players.length - 1 ? players[currentIndex + 1] : players[0]);
+          if (nextFree) get().selectPlayer(nextFree.id);
+        } else {
+          const prevFree = [...players.slice(0, currentIndex)].reverse().find((p) => !p.assignedTo && p.assignedTo !== 'UNSOLD')
+            || [...players].reverse().find((p) => !p.assignedTo && p.assignedTo !== 'UNSOLD')
+            || (currentIndex > 0 ? players[currentIndex - 1] : players[players.length - 1]);
+          if (prevFree) get().selectPlayer(prevFree.id);
         }
       },
 

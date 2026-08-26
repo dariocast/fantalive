@@ -121,7 +121,16 @@ export const PlayerList: React.FC = () => {
     });
 
     // Sorting
+    const roleOrder: Record<Role, number> = { P: 1, D: 2, C: 3, A: 4 };
+
     list = [...list].sort((a, b) => {
+      // If viewing ALL roles, prioritize role hierarchy (P -> D -> C -> A)
+      if (filters.role === 'ALL') {
+        const rA = roleOrder[a.role] || 99;
+        const rB = roleOrder[b.role] || 99;
+        if (rA !== rB) return rA - rB;
+      }
+
       let comp = 0;
       switch (filters.sortBy) {
         case 'pma':
@@ -142,7 +151,7 @@ export const PlayerList: React.FC = () => {
           break;
         case 'name':
         default:
-          comp = a.name.localeCompare(b.name);
+          comp = a.name.localeCompare(b.name, 'it', { sensitivity: 'base' });
           break;
       }
       return filters.sortOrder === 'desc' && filters.sortBy === 'name' ? -comp : comp;
