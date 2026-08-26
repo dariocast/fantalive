@@ -15,7 +15,8 @@ import {
   Sparkles,
   TrendingUp,
   LayoutGrid,
-  Smartphone
+  Smartphone,
+  Settings2
 } from 'lucide-react';
 import { getMaxBid, getTotalRemainingSlots, getAverageBudgetPerRemainingSlot, getRoleColor } from '../utils/calculations';
 
@@ -77,6 +78,8 @@ export const Header: React.FC = () => {
   const maxBid = user ? getMaxBid(user, settings.rosterRequirements) : 0;
   const avgSlotBudget = user ? getAverageBudgetPerRemainingSlot(user, settings.rosterRequirements) : 0;
 
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
@@ -90,282 +93,246 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-[#0f0c29]/95 backdrop-blur-md border-b border-white/10 sticky top-0 z-40 px-3 sm:px-6 py-2.5 shadow-xl shadow-black/40">
-      <div className="max-w-[1920px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <header className="bg-[#0f0c29]/95 backdrop-blur-md border-b border-white/10 sticky top-0 z-40 px-3 sm:px-6 py-2 shadow-xl shadow-black/40">
+      <div className="max-w-[1920px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
         
-        {/* Left: App Brand & Auction Info */}
-        <div className="flex items-center justify-between md:justify-start gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00f59b] to-[#00b4d8] flex items-center justify-center text-black font-black text-lg shadow-md shadow-emerald-500/20">
-              ⚽
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base sm:text-lg text-white tracking-tight">
-                  {settings.name}
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[10px] font-bold uppercase tracking-wider">
-                  {settings.mode}
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-[#00f59b]/20 border border-[#00f59b]/30 text-[#00f59b] text-[10px] font-bold tracking-wider">
-                  {settings.totalBudget} FM
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
-                {settings.participantsCount} Partecipanti • Base {settings.basePriceType}
-              </p>
-            </div>
+        {/* Left: App Brand */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#00f59b] to-[#00b4d8] flex items-center justify-center text-black font-black text-base sm:text-lg shadow-md shadow-emerald-500/20">
+            ⚽
           </div>
-
-          {/* ACTIVE PLAYER SPOTLIGHT CAPSULE (ALWAYS VISIBLE PINNED AT TOP OF SCREEN) */}
-          {activePlayer && (
-            <div 
-              onClick={() => setActiveMobileTab('focus')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-[#1c164a] to-[#251e60] border border-[#00f59b]/50 shadow-md cursor-pointer active:scale-95 transition min-w-0"
-              title="Clicca per aprire la scheda di battuta"
-            >
-              {roleStyle && (
-                <span className={`w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] shrink-0 ${roleStyle.badge}`}>
-                  {activePlayer.role}
-                </span>
-              )}
-              <div className="min-w-0 truncate">
-                <span className="font-black text-xs sm:text-sm text-white truncate block">
-                  {activePlayer.name}
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-300 font-semibold truncate hidden sm:inline">
-                {activePlayer.team}
-              </span>
-              <span className="text-xs font-mono font-black text-[#00f59b] shrink-0 pl-1 border-l border-white/15">
-                {currentBid} FM
-              </span>
-            </div>
-          )}
-
-          {/* Mobile Right Controls Quick Access */}
-          <div className="flex md:hidden items-center gap-1.5 shrink-0">
-            <button
-              onClick={toggleSound}
-              className={`p-2 rounded-xl border text-xs transition ${
-                soundEnabled 
-                  ? 'bg-purple-600/20 border-purple-500/40 text-purple-300' 
-                  : 'bg-white/5 border-white/10 text-slate-400'
-              }`}
-              title="Suoni"
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setExportModalOpen(true)}
-              className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition"
-              title="Esporta"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => {
-                if (window.confirm("Vuoi davvero reimpostare l'asta o cambiare impostazioni?")) {
-                  resetAuction();
-                }
-              }}
-              className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-rose-400 transition"
-              title="Setup"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          </div>
+          <span className="font-extrabold text-sm sm:text-base text-white tracking-tight hidden xs:inline truncate max-w-[120px] sm:max-w-[180px]">
+            {settings.name || 'FantaLive'}
+          </span>
         </div>
 
-        {/* Center: Live User Budget Status Dashboard (GLANCEABLE BIG STATS) */}
-        {user && (
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-3 bg-[#17133f] px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-2xl border border-white/10 shadow-inner">
-            
-            {/* Budget Residuo */}
-            <div className="flex flex-col items-center sm:items-start">
-              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Coins className="w-3 h-3 text-[#00f59b] hidden sm:inline" />
-                Residuo
+        {/* Center-Left: Active Player Spotlight Capsule (Always Visible) */}
+        {activePlayer && (
+          <div 
+            onClick={() => setActiveMobileTab('focus')}
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl bg-gradient-to-r from-[#1c164a] to-[#251e60] border border-[#00f59b]/50 shadow-md cursor-pointer active:scale-95 transition min-w-0 flex-1 max-w-[280px] sm:max-w-[340px]"
+            title="Calciatore in battuta - Clicca per scheda live"
+          >
+            {roleStyle && (
+              <span className={`w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] shrink-0 ${roleStyle.badge}`}>
+                {activePlayer.role}
               </span>
-              <div className="text-base sm:text-2xl font-black text-[#00f59b] font-mono leading-none tracking-tight">
-                {user.budget} <span className="text-[10px] sm:text-xs text-[#00f59b]/70 font-sans font-bold">FM</span>
-              </div>
-            </div>
-
-            {/* Potere d'Acquisto Max */}
-            <div className="flex flex-col items-center sm:items-start border-l border-white/10 pl-2 sm:pl-3">
-              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Shield className="w-3 h-3 text-cyan-400 hidden sm:inline" />
-                Max Offerta
+            )}
+            <div className="min-w-0 flex-1 truncate">
+              <span className="font-black text-xs sm:text-sm text-white truncate block">
+                {activePlayer.name}
               </span>
-              <div className="text-base sm:text-2xl font-black text-cyan-300 font-mono leading-none tracking-tight">
-                {maxBid} <span className="text-[10px] sm:text-xs text-cyan-300/70 font-sans font-bold">FM</span>
-              </div>
             </div>
-
-            {/* Slot Completati */}
-            <div className="flex flex-col items-center sm:items-start border-l border-white/10 pl-2 sm:pl-3">
-              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Layers className="w-3 h-3 text-amber-400 hidden sm:inline" />
-                Rosa
-              </span>
-              <div className="text-base sm:text-2xl font-black text-amber-300 font-mono leading-none tracking-tight">
-                {userSlotsFilled}<span className="text-xs sm:text-sm text-slate-400 font-bold">/{totalRequiredSlots}</span>
-              </div>
-            </div>
-
-            {/* Spesa Media Slot */}
-            <div className="flex flex-col items-center sm:items-start border-l border-white/10 pl-2 sm:pl-3">
-              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-purple-400 hidden sm:inline" />
-                Media/Slot
-              </span>
-              <div className="text-base sm:text-2xl font-black text-purple-300 font-mono leading-none tracking-tight">
-                {avgSlotBudget} <span className="text-[10px] sm:text-xs text-purple-300/70 font-sans font-bold">FM</span>
-              </div>
-            </div>
-
+            <span className="text-[10px] text-slate-300 font-semibold truncate hidden sm:inline">
+              {activePlayer.team}
+            </span>
+            <span className="text-xs font-mono font-black text-[#00f59b] shrink-0 pl-1 border-l border-white/15">
+              {currentBid} FM
+            </span>
           </div>
         )}
 
-        {/* Right: Desktop Action Buttons */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* Center-Right: Budget & Squad Status */}
+        {user && (
+          <div className="hidden lg:flex items-center gap-3 bg-[#17133f] px-3.5 py-1.5 rounded-2xl border border-white/10 shadow-inner text-xs">
+            <div className="flex items-center gap-1.5 font-bold">
+              <Coins className="w-3.5 h-3.5 text-[#00f59b]" />
+              <span className="text-slate-400">Residuo:</span>
+              <span className="text-sm font-black text-[#00f59b] font-mono">{user.budget} FM</span>
+            </div>
+            <div className="border-l border-white/10 pl-3 flex items-center gap-1.5 font-bold">
+              <Shield className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-slate-400">Max Bid:</span>
+              <span className="text-sm font-black text-cyan-300 font-mono">{maxBid} FM</span>
+            </div>
+            <div className="border-l border-white/10 pl-3 flex items-center gap-1.5 font-bold">
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-slate-400">Rosa:</span>
+              <span className="text-sm font-black text-amber-300 font-mono">{userSlotsFilled}/{totalRequiredSlots}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Right: Settings Menu Button & Desktop Quick Actions */}
+        <div className="flex items-center gap-1.5 shrink-0 relative">
           
-          {/* Live Probabili Fantacalcio.it Refresh Button */}
+          {/* Quick Probabili Refresh on desktop */}
           <button
             onClick={fetchProbabiliLive}
             disabled={isSyncingProbabili}
-            className={`px-3 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-sm ${
               isSyncingProbabili 
                 ? 'bg-purple-600/30 border-purple-500/50 text-purple-200 animate-pulse'
                 : 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-300'
             }`}
-            title="Aggiorna probabili formazioni in tempo reale da Fantacalcio.it"
+            title="Aggiorna formazioni ed infortuni"
           >
             <Sparkles className={`w-3.5 h-3.5 ${isSyncingProbabili ? 'animate-spin' : 'text-[#00f59b]'}`} />
-            <span>{isSyncingProbabili ? 'Sincronizzazione...' : (probabiliData?.matchweek ? `Probabili ${probabiliData.matchweek}` : 'Probabili Live')}</span>
+            <span>{isSyncingProbabili ? 'Sync...' : (probabiliData?.matchweek ? probabiliData.matchweek : 'Probabili')}</span>
           </button>
 
-          {/* Tabellone Avversari Modal Button */}
+          {/* MAIN SETTINGS & ACTIONS DROPDOWN BUTTON (ICON ONLY ON MOBILE) */}
           <button
-            onClick={() => setOpponentsModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#211a54] hover:bg-[#2c2370] border border-purple-500/30 text-purple-200 text-xs font-bold transition flex items-center gap-2 shadow-sm"
-          >
-            <Users className="w-4 h-4 text-cyan-400" />
-            <span>Tabellone Completo</span>
-          </button>
-
-          {/* PWA Install Button */}
-          <button
-            onClick={handleInstallPwa}
-            className="px-3 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/40 text-purple-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
-            title="Installa come Web App (PWA)"
-          >
-            <Smartphone className="w-3.5 h-3.5 text-purple-300" />
-            <span className="hidden lg:inline">Installa App</span>
-          </button>
-
-          {/* Export Button */}
-          <button
-            onClick={() => setExportModalOpen(true)}
-            className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold transition flex items-center gap-1.5"
-            title="Esporta risultati asta in Excel/CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Esporta</span>
-          </button>
-
-          {/* Sound Toggle */}
-          <button
-            onClick={toggleSound}
-            className={`p-2 rounded-xl border text-xs transition ${
-              soundEnabled 
-                ? 'bg-purple-600/20 border-purple-500/40 text-purple-300 hover:bg-purple-600/30' 
-                : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className={`p-2 rounded-xl border transition flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
+              isMenuOpen 
+                ? 'bg-[#00f59b] text-black border-[#00f59b] shadow-lg shadow-emerald-500/20' 
+                : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-200'
             }`}
-            title={soundEnabled ? 'Disattiva effetti sonori' : 'Attiva effetti sonori'}
+            title="Menu Impostazioni & Funzioni"
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            <Settings2 className="w-4 h-4" />
+            <span className="hidden md:inline">Impostazioni</span>
           </button>
 
-          {/* Fullscreen Toggle */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition"
-            title="Schermo intero"
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
+          {/* DROPDOWN POPUP MENU */}
+          {isMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs" 
+                onClick={() => setIsMenuOpen(false)}
+              />
 
-          {/* Hotkey Help */}
-          <button
-            onClick={() => setHotkeyHelpOpen(true)}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-[#00f59b] transition"
-            title="Scorciatoie da tastiera"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
+              {/* Menu Card */}
+              <div className="absolute right-0 top-12 z-50 w-72 sm:w-80 bg-[#15103d] border border-white/15 rounded-3xl p-3 shadow-2xl shadow-black/80 space-y-1.5 text-sm">
+                
+                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+                  <span className="font-extrabold text-xs uppercase tracking-wider text-slate-400">
+                    Menu & Strumenti
+                  </span>
+                  <button 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
 
-          {/* Settings / Reset */}
-          <button
-            onClick={() => {
-              if (window.confirm("Vuoi reimpostare l'asta e tornare alla schermata di configurazione?")) {
-                resetAuction();
-              }
-            }}
-            className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 transition"
-            title="Configura / Nuova Asta"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
+                {/* 1. Probabili Live Sync */}
+                <button
+                  onClick={() => {
+                    fetchProbabiliLive();
+                    setIsMenuOpen(false);
+                  }}
+                  disabled={isSyncingProbabili}
+                  className="w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-left flex items-center justify-between text-slate-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#00f59b]" />
+                    <span className="font-semibold text-xs sm:text-sm">Sincronizza Probabili & Infortunati</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">Live</span>
+                </button>
+
+                {/* 2. Full League Modal */}
+                <button
+                  onClick={() => {
+                    setOpponentsModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-left flex items-center justify-between text-slate-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Users className="w-4 h-4 text-cyan-400" />
+                    <span className="font-semibold text-xs sm:text-sm">Tabellone Completo Rose</span>
+                  </div>
+                </button>
+
+                {/* 3. Export Modal */}
+                <button
+                  onClick={() => {
+                    setExportModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-left flex items-center justify-between text-slate-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Download className="w-4 h-4 text-emerald-400" />
+                    <span className="font-semibold text-xs sm:text-sm">Esporta Risultati (Excel/CSV)</span>
+                  </div>
+                </button>
+
+                {/* 4. Install App PWA */}
+                <button
+                  onClick={() => {
+                    handleInstallPwa();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-left flex items-center justify-between text-slate-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Smartphone className="w-4 h-4 text-purple-400" />
+                    <span className="font-semibold text-xs sm:text-sm">Installa come App (PWA)</span>
+                  </div>
+                </button>
+
+                {/* 5. Sound Toggle */}
+                <button
+                  onClick={toggleSound}
+                  className="w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-left flex items-center justify-between text-slate-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {soundEnabled ? <Volume2 className="w-4 h-4 text-purple-300" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
+                    <span className="font-semibold text-xs sm:text-sm">Effetti Sonori</span>
+                  </div>
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${soundEnabled ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-slate-400'}`}>
+                    {soundEnabled ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                {/* 6. Fullscreen */}
+                <button
+                  onClick={() => {
+                    toggleFullscreen();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-left flex items-center justify-between text-slate-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isFullscreen ? <Minimize2 className="w-4 h-4 text-slate-300" /> : <Maximize2 className="w-4 h-4 text-slate-300" />}
+                    <span className="font-semibold text-xs sm:text-sm">{isFullscreen ? 'Esci da Schermo Intero' : 'Schermo Intero'}</span>
+                  </div>
+                </button>
+
+                {/* 7. Hotkey Help */}
+                <button
+                  onClick={() => {
+                    setHotkeyHelpOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-left flex items-center justify-between text-slate-200 transition"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <HelpCircle className="w-4 h-4 text-amber-400" />
+                    <span className="font-semibold text-xs sm:text-sm">Scorciatoie da Tastiera</span>
+                  </div>
+                </button>
+
+                {/* Divider */}
+                <div className="border-t border-white/10 pt-1">
+                  {/* 8. Reset / New Auction */}
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      if (window.confirm("Vuoi davvero reimpostare l'asta o cambiare impostazioni?")) {
+                        resetAuction();
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-2xl hover:bg-rose-500/20 text-left flex items-center gap-2.5 text-rose-400 transition"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span className="font-semibold text-xs sm:text-sm">Reimposta Asta / Setup</span>
+                  </button>
+                </div>
+
+              </div>
+            </>
+          )}
+
         </div>
 
       </div>
-
-      {/* Mobile Tab Navigation bar (Sticky under header on phones) */}
-      <div className="flex md:hidden items-center justify-between gap-1 mt-2.5 pt-2 border-t border-white/10 text-xs font-bold">
-        <button
-          onClick={() => setActiveMobileTab('focus')}
-          className={`flex-1 py-1.5 rounded-lg text-center transition ${
-            activeMobileTab === 'focus'
-              ? 'bg-[#00f59b] text-black font-black'
-              : 'bg-white/5 text-slate-300'
-          }`}
-        >
-          Battuta Live
-        </button>
-        <button
-          onClick={() => setActiveMobileTab('list')}
-          className={`flex-1 py-1.5 rounded-lg text-center transition ${
-            activeMobileTab === 'list'
-              ? 'bg-[#00f59b] text-black font-black'
-              : 'bg-white/5 text-slate-300'
-          }`}
-        >
-          Listone
-        </button>
-        <button
-          onClick={() => setActiveMobileTab('roster')}
-          className={`flex-1 py-1.5 rounded-lg text-center transition ${
-            activeMobileTab === 'roster'
-              ? 'bg-[#00f59b] text-black font-black'
-              : 'bg-white/5 text-slate-300'
-          }`}
-        >
-          Mia Rosa
-        </button>
-        <button
-          onClick={() => setActiveMobileTab('opponents')}
-          className={`flex-1 py-1.5 rounded-lg text-center transition ${
-            activeMobileTab === 'opponents'
-              ? 'bg-[#00f59b] text-black font-black'
-              : 'bg-white/5 text-slate-300'
-          }`}
-        >
-          Avversari
-        </button>
-      </div>
-
     </header>
   );
 };
