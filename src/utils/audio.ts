@@ -3,17 +3,44 @@
 class SoundManager {
   private ctx: AudioContext | null = null;
   private enabled: boolean = true;
+  private isUnlocked: boolean = false;
 
-  private initCtx() {
-    if (!this.ctx && typeof window !== 'undefined') {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const unlock = () => {
+        this.unlockAudio();
+        window.removeEventListener('click', unlock);
+        window.removeEventListener('keydown', unlock);
+        window.removeEventListener('touchstart', unlock);
+        window.removeEventListener('pointerdown', unlock);
+      };
+      window.addEventListener('click', unlock, { passive: true });
+      window.addEventListener('keydown', unlock, { passive: true });
+      window.addEventListener('touchstart', unlock, { passive: true });
+      window.addEventListener('pointerdown', unlock, { passive: true });
+    }
+  }
+
+  public unlockAudio() {
+    try {
+      if (!this.ctx && typeof window !== 'undefined') {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          this.ctx = new AudioCtx();
+        }
       }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      this.isUnlocked = true;
+    } catch {
+      // AudioContext not permitted yet before user gesture
     }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
+  }
+
+  private initCtx(): boolean {
+    this.unlockAudio();
+    return !!this.ctx && this.ctx.state === 'running';
   }
 
   public setEnabled(enabled: boolean) {
@@ -28,8 +55,7 @@ class SoundManager {
   public playTick(frequency = 800) {
     if (!this.enabled) return;
     try {
-      this.initCtx();
-      if (!this.ctx) return;
+      if (!this.initCtx() || !this.ctx) return;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       
@@ -54,8 +80,7 @@ class SoundManager {
   public playSuccessChime() {
     if (!this.enabled) return;
     try {
-      this.initCtx();
-      if (!this.ctx) return;
+      if (!this.initCtx() || !this.ctx) return;
       const now = this.ctx.currentTime;
       
       const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
@@ -85,8 +110,7 @@ class SoundManager {
   public playGavel() {
     if (!this.enabled) return;
     try {
-      this.initCtx();
-      if (!this.ctx) return;
+      if (!this.initCtx() || !this.ctx) return;
       const now = this.ctx.currentTime;
       
       const osc = this.ctx.createOscillator();
@@ -113,8 +137,7 @@ class SoundManager {
   public playUndo() {
     if (!this.enabled) return;
     try {
-      this.initCtx();
-      if (!this.ctx) return;
+      if (!this.initCtx() || !this.ctx) return;
       const now = this.ctx.currentTime;
       
       const osc = this.ctx.createOscillator();
@@ -141,8 +164,7 @@ class SoundManager {
   public playSkip() {
     if (!this.enabled) return;
     try {
-      this.initCtx();
-      if (!this.ctx) return;
+      if (!this.initCtx() || !this.ctx) return;
       const now = this.ctx.currentTime;
       
       const osc = this.ctx.createOscillator();
@@ -167,3 +189,4 @@ class SoundManager {
 }
 
 export const soundManager = new SoundManager();
+

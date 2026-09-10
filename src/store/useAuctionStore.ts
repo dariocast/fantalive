@@ -124,36 +124,43 @@ export const useAuctionStore = create<AuctionState>()(
       fetchProbabiliLive: async () => {
         set({ isSyncingProbabili: true });
         try {
+          const isDev = typeof window !== 'undefined' && (
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname === '[::1]'
+          );
+
           const fetchWithFallback = async (endpoint: string, targetUrl: string) => {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 7000);
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-            // 1. Try local proxy
-            try {
-              const res = await fetch(endpoint, { signal: controller.signal });
-              if (res.ok) {
-                const text = await res.text();
-                if (text && text.length > 500) {
-                  clearTimeout(timeoutId);
-                  return text;
+            // 1. Try local proxy only in dev / localhost
+            if (isDev) {
+              try {
+                const res = await fetch(endpoint, { signal: controller.signal });
+                if (res.ok) {
+                  const text = await res.text();
+                  if (text && text.length > 500) {
+                    clearTimeout(timeoutId);
+                    return text;
+                  }
                 }
+              } catch {
+                // ignore
               }
-            } catch {
-              // ignore
             }
 
-            // 2. Fallback to public CORS proxies
+            // 2. Fallback to public CORS proxies (excluding corsproxy.io which requires auth)
             const proxies = [
-              (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-              (u: string) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-              (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
+              (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+              (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
             ];
 
             for (const getProxyUrl of proxies) {
               try {
                 const proxyUrl = getProxyUrl(targetUrl);
                 const proxyCtrl = new AbortController();
-                const pTimeout = setTimeout(() => proxyCtrl.abort(), 5000);
+                const pTimeout = setTimeout(() => proxyCtrl.abort(), 4000);
                 const res = await fetch(proxyUrl, { signal: proxyCtrl.signal });
                 clearTimeout(pTimeout);
                 if (res.ok) {
@@ -185,12 +192,11 @@ export const useAuctionStore = create<AuctionState>()(
                 lastProbabiliSync: parsed.updatedAt,
                 isSyncingProbabili: false
               });
-              soundManager.playTick(1200);
               return;
             }
           }
-        } catch (err) {
-          console.warn('Could not fetch live probabili/infortunati, using cached snapshot:', err);
+        } catch {
+          // silently fallback to pre-bundled snapshot
         }
         set({ isSyncingProbabili: false });
       },
