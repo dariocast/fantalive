@@ -35,7 +35,8 @@ export const PlayerList: React.FC = () => {
     probabiliData,
     reintroduceAllUnsold,
     currentBid,
-    setActiveMobileTab
+    setActiveMobileTab,
+    setFormationModalTeam
   } = useAuctionStore();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -404,69 +405,69 @@ export const PlayerList: React.FC = () => {
                         <span className="text-amber-400 text-[10px] font-bold">⚽ Rig</span>
                       )}
                       {prob.status === 'titolare' && (
-                        <a
-                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 hover:bg-emerald-500/40 text-[#00f59b] font-bold border border-emerald-500/30 transition hover:scale-105 inline-flex items-center gap-0.5"
-                          title={`Titolare (${prob.titolarita}%). Clicca per vedere la probabile formazione su Fantacalcio.it`}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormationModalTeam(player.team);
+                          }}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 hover:bg-emerald-500/40 text-[#00f59b] font-bold border border-emerald-500/30 transition hover:scale-105 inline-flex items-center gap-0.5 cursor-pointer"
+                          title={`Titolare (${prob.titolarita}%). Clicca per vedere la probabile formazione della squadra`}
                         >
                           <span>Tit</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                        </a>
+                        </button>
                       )}
                       {prob.status === 'ballottaggio' && (
-                        <a
-                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 font-bold border border-amber-500/30 transition hover:scale-105 inline-flex items-center gap-0.5"
-                          title={`Ballottaggio ${prob.ballotPct || 50}%. Clicca per vedere la probabile formazione su Fantacalcio.it`}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormationModalTeam(player.team);
+                          }}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 font-bold border border-amber-500/30 transition hover:scale-105 inline-flex items-center gap-0.5 cursor-pointer"
+                          title={`Ballottaggio ${prob.ballotPct || 50}%. Clicca per vedere la probabile formazione della squadra`}
                         >
                           <span>Ball {prob.ballotPct || 50}%</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                        </a>
+                        </button>
                       )}
                       {prob.status === 'infortunato' && (
-                        <a
-                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 font-bold border border-rose-500/30 transition hover:scale-105 inline-flex items-center gap-0.5"
-                          title={`Infortunato: ${prob.description || 'Non disponibile'}. Clicca per vedere su Fantacalcio.it`}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormationModalTeam(player.team);
+                          }}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 font-bold border border-rose-500/30 transition hover:scale-105 inline-flex items-center gap-0.5 cursor-pointer"
+                          title={`Infortunato: ${prob.description || 'Non disponibile'}. Clicca per info`}
                         >
                           <span>Inf</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                        </a>
+                        </button>
                       )}
                       {prob.status === 'squalificato' && (
-                        <a
-                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[9px] px-1.5 py-0.2 rounded bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 font-bold border border-rose-600/30 transition hover:scale-105 inline-flex items-center gap-0.5"
-                          title="Squalificato. Clicca per vedere su Fantacalcio.it"
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormationModalTeam(player.team);
+                          }}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 font-bold border border-rose-600/30 transition hover:scale-105 inline-flex items-center gap-0.5 cursor-pointer"
+                          title="Squalificato. Clicca per info squadra"
                         >
                           <span>Squ</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                        </a>
+                        </button>
                       )}
                       {prob.status === 'non_convocato' && (
-                        <a
-                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 border border-white/10 font-bold transition hover:scale-105 inline-flex items-center gap-0.5"
-                          title="Non presente nei convocati per questa giornata. Clicca per vedere la probabile formazione su Fantacalcio.it"
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormationModalTeam(player.team);
+                          }}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 border border-white/10 font-bold transition hover:scale-105 inline-flex items-center gap-0.5 cursor-pointer"
+                          title="Non presente nei convocati per questa giornata. Clicca per vedere la probabile formazione"
                         >
                           <span>Non conv.</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                        </a>
+                        </button>
                       )}
                     </div>
                   </div>

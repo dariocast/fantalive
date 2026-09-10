@@ -457,3 +457,126 @@ export function getTeamProbabiliUrl(teamName?: string, teamSlug?: string): strin
   return slug ? `${baseUrl}#${slug}` : baseUrl;
 }
 
+export interface TeamFormationPlayer {
+  id: string | number;
+  name: string;
+  role: 'P' | 'D' | 'C' | 'A';
+  roleMantra?: string | null;
+  slot?: number;
+  pma?: number;
+  purchasePrice?: number | null;
+  assignedTo?: string | null;
+  status: 'titolare' | 'panchina' | 'ballottaggio' | 'infortunato' | 'squalificato' | 'dubbio' | 'non_convocato';
+  statusLabel: string;
+  titolarita: number;
+  ballotPartner?: string;
+  ballotPct?: number;
+  description?: string;
+}
+
+export interface TeamFormationDetails {
+  teamName: string;
+  match?: string;
+  matchDate?: string;
+  matchweek?: string;
+  starters: TeamFormationPlayer[];
+  ballots: TeamFormationPlayer[];
+  reserves: TeamFormationPlayer[];
+  unavailable: TeamFormationPlayer[];
+}
+
+export function getTeamFormationDetails(
+  teamName: string,
+  probabiliData: ProbabiliResponse | null,
+  allPlayers: Player[] = []
+): TeamFormationDetails {
+  const norm = (str: string) => str.toUpperCase().replace(/[^A-Z]/g, '');
+  const targetNorm = norm(teamName);
+
+  // Filter all players from roster belonging to this team
+  const teamPlayers = allPlayers.filter((p) => {
+    const pNorm = norm(p.team || '');
+    return pNorm === targetNorm || pNorm.includes(targetNorm) || targetNorm.includes(pNorm);
+  });
+
+  const starters: TeamFormationPlayer[] = [];
+  const ballots: TeamFormationPlayer[] = [];
+  const reserves: TeamFormationPlayer[] = [];
+  const unavailable: TeamFormationPlayer[] = [];
+
+  let matchTitle = '';
+  let matchDate = '';
+
+  const roleOrder = { P: 1, D: 2, C: 3, A: 4 };
+
+  teamPlayers.forEach((player) => {
+    const prob = getPlayerProbabiliStatus(player, probabiliData?.players || null);
+    if (!matchTitle && prob.match) matchTitle = prob.match;
+    if (!matchDate && prob.matchDate) matchDate = prob.matchDate;
+
+    const item: TeamFormationPlayer = {
+      id: player.id,
+      name: player.name,
+      role: player.role,
+      roleMantra: player.roleMantra,
+      slot: player.slot,
+      pma: player.pma,
+      purchasePrice: player.purchasePrice,
+      assignedTo: player.assignedTo,
+      status: prob.status,
+      statusLabel: prob.statusLabel,
+      titolarita: prob.titolarita,
+      ballotPartner: prob.ballotPartner,
+      ballotPct: prob.ballotPct,
+      description: prob.description
+    };
+
+    if (prob.status === 'titolare') {
+      starters.push(item);
+    } else if (prob.status === 'ballottaggio') {
+      ballots.push(item);
+      // Also add to starters if favored
+      if (prob.titolarita >= 50) {
+        starters.push(item);
+      } else {
+        reserves.push(item);
+      }
+    } else if (prob.status === 'panchina') {
+      reserves.push(item);
+    } else if (['infortunato', 'squalificato', 'dubbio'].includes(prob.status)) {
+      unavailable.push(item);
+    } else {
+      // non_convocato or not in probabili
+      reserves.push(item);
+    }
+  });
+
+  // Sort starters by role (P -> D -> C -> A) and titolarità desc
+  starters.sort((a, b) => {
+    const rA = roleOrder[a.role] || 99;
+    const rB = roleOrder[b.role] || 99;
+    if (rA !== rB) return rA - rB;
+    return b.titolarita - a.titolarita;
+  });
+
+  // Sort reserves by role (P -> D -> C -> A) and titolarità desc
+  reserves.sort((a, b) => {
+    const rA = roleOrder[a.role] || 99;
+    const rB = roleOrder[b.role] || 99;
+    if (rA !== rB) return rA - rB;
+    return b.titolarita - a.titolarita;
+  });
+
+  return {
+    teamName,
+    match: matchTitle,
+    matchDate,
+    matchweek: probabiliData?.matchweek || 'Prossima Giornata',
+    starters,
+    ballots,
+    reserves,
+    unavailable
+  };
+}
+
+

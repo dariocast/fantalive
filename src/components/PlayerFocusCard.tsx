@@ -54,7 +54,8 @@ export const PlayerFocusCard: React.FC = () => {
     settings,
     selectNextPlayer,
     probabiliData,
-    reintroducePlayer
+    reintroducePlayer,
+    setFormationModalTeam
   } = useAuctionStore();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -300,16 +301,15 @@ export const PlayerFocusCard: React.FC = () => {
                   </span>
                 )}
                 <span>•</span>
-                <a
-                  href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => setFormationModalTeam(player.team)}
                   className={`px-2.5 py-0.5 rounded-lg border font-bold text-xs inline-flex items-center gap-1.5 hover:scale-105 active:scale-95 transition cursor-pointer shadow-sm ${getTitolaritaColor(player.expectedTitolarita)}`}
-                  title="Apri la probabile formazione della squadra su Fantacalcio.it"
+                  title="Clicca per aprire la probabile formazione della squadra"
                 >
                   <span>{player.probableStatus || `Titolarità ${player.expectedTitolarita}%`}</span>
-                  <ExternalLink className="w-3 h-3 opacity-70" />
-                </a>
+                  <Activity className="w-3 h-3 opacity-70" />
+                </button>
               </div>
             </div>
 
@@ -373,27 +373,25 @@ export const PlayerFocusCard: React.FC = () => {
                     )}
                   </div>
                 )}
-                <a
-                  href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-slate-200 text-[10px] font-bold inline-flex items-center gap-1 transition shrink-0"
-                  title="Apri le formazioni su Fantacalcio.it"
+                <button
+                  type="button"
+                  onClick={() => setFormationModalTeam(player.team)}
+                  className="px-2.5 py-1 rounded-lg bg-[#00f59b]/15 hover:bg-[#00f59b]/25 border border-[#00f59b]/40 text-[#00f59b] text-[11px] font-bold inline-flex items-center gap-1.5 transition shrink-0 cursor-pointer shadow-sm"
+                  title="Apri il modulo e la probabile formazione completa"
                 >
-                  <span>Formazione</span>
-                  <ExternalLink className="w-3 h-3 text-[#00f59b]" />
-                </a>
+                  <span>Vedi Formazione</span>
+                  <Activity className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
             {/* Status Display */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
               <div className="flex items-center gap-3">
-                <a
-                  href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Clicca per aprire la probabile formazione su Fantacalcio.it"
+                <button
+                  type="button"
+                  onClick={() => setFormationModalTeam(player.team)}
+                  title="Clicca per aprire la probabile formazione in overlay"
                   className={`px-3.5 py-1.5 rounded-2xl border text-xs sm:text-sm font-black inline-flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition cursor-pointer ${
                     probabiliInfo.status === 'titolare'
                       ? 'bg-emerald-500/20 border-emerald-500/50 text-[#00f59b] shadow-sm shadow-emerald-950/40'
@@ -418,8 +416,8 @@ export const PlayerFocusCard: React.FC = () => {
                   {probabiliInfo.status === 'non_convocato' && <AlertTriangle className="w-4 h-4 text-rose-400" />}
 
                   <span>{probabiliInfo.statusLabel}</span>
-                  <ExternalLink className="w-3.5 h-3.5 opacity-70 ml-0.5" />
-                </a>
+                  <Activity className="w-3.5 h-3.5 opacity-70 ml-0.5" />
+                </button>
 
                 {probabiliInfo.status === 'non_convocato' && (
                   <p className="text-[11px] text-slate-400 italic">
@@ -430,19 +428,18 @@ export const PlayerFocusCard: React.FC = () => {
 
               {/* Titolarità Gauge for next match */}
               {probabiliInfo.status !== 'non_convocato' && (
-                <a
-                  href={getTeamProbabiliUrl(player.team, player.teamSlug)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 self-end sm:self-auto shrink-0 p-1 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition cursor-pointer"
-                  title="Clicca per aprire la probabile formazione su Fantacalcio.it"
+                <button
+                  type="button"
+                  onClick={() => setFormationModalTeam(player.team)}
+                  className="flex items-center gap-2 self-end sm:self-auto shrink-0 p-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition cursor-pointer"
+                  title="Clicca per aprire la probabile formazione della squadra"
                 >
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Probabilità campo:</span>
                   <span className="font-mono font-black text-sm text-[#00f59b] inline-flex items-center gap-1">
                     {probabiliInfo.titolarita}%
-                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                    <Activity className="w-3 h-3 text-slate-400" />
                   </span>
-                </a>
+                </button>
               )}
             </div>
           </div>

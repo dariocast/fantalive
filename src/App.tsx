@@ -8,6 +8,7 @@ import { RosterAndOpponents } from './components/RosterAndOpponents';
 import { OpponentsModal } from './components/OpponentsModal';
 import { ExportModal } from './components/ExportModal';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
+import { TeamFormationModal } from './components/TeamFormationModal';
 
 export const App: React.FC = () => {
   const { isConfigured, activeMobileTab, setActiveMobileTab, settings, fetchProbabiliLive } = useAuctionStore();
@@ -114,6 +115,7 @@ export const App: React.FC = () => {
       <OpponentsModal />
       <ExportModal />
       <KeyboardShortcutsHelp />
+      <TeamFormationModal />
     </div>
   );
 };

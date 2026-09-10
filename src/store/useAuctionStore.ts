@@ -70,6 +70,7 @@ interface AuctionState {
   opponentsModalOpen: boolean;
   exportModalOpen: boolean;
   hotkeyHelpOpen: boolean;
+  formationModalTeam: string | null;
   activeMobileTab: 'focus' | 'list' | 'roster' | 'opponents';
 
   // Probabili Formazioni State
@@ -94,6 +95,7 @@ interface AuctionState {
   setOpponentsModalOpen: (open: boolean) => void;
   setExportModalOpen: (open: boolean) => void;
   setHotkeyHelpOpen: (open: boolean) => void;
+  setFormationModalTeam: (team: string | null) => void;
   setActiveMobileTab: (tab: 'focus' | 'list' | 'roster' | 'opponents') => void;
   loadCustomPlayers: (players: Player[]) => void;
   selectNextPlayer: (direction?: 'next' | 'prev') => void;
@@ -116,6 +118,7 @@ export const useAuctionStore = create<AuctionState>()(
       opponentsModalOpen: false,
       exportModalOpen: false,
       hotkeyHelpOpen: false,
+      formationModalTeam: null,
       activeMobileTab: 'focus',
       probabiliData: defaultProbabili,
       isSyncingProbabili: false,
@@ -533,6 +536,7 @@ export const useAuctionStore = create<AuctionState>()(
       setOpponentsModalOpen: (open) => set({ opponentsModalOpen: open }),
       setExportModalOpen: (open) => set({ exportModalOpen: open }),
       setHotkeyHelpOpen: (open) => set({ hotkeyHelpOpen: open }),
+      setFormationModalTeam: (team) => set({ formationModalTeam: team }),
       setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
 
       loadCustomPlayers: (players) => {
