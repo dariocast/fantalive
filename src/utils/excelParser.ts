@@ -270,3 +270,100 @@ export function exportAuctionToExcel(
   const fileName = `${settings.name.replace(/\s+/g, '_')}_Risultati_${new Date().toISOString().slice(0, 10)}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
+
+/**
+ * Resolves the numeric Fantacalcio ID for a player.
+ * Checks player.idFantacalcio, player.id, and falls back to probabiliMap lookup.
+ */
+export function resolvePlayerId(
+  player: Player,
+  probabiliMap?: Record<string, { id: string; name?: string }> | null
+): string {
+  // 1. If idFantacalcio is numeric (e.g. 2764)
+  if (player.idFantacalcio && /^\d+$/.test(String(player.idFantacalcio).trim())) {
+    return String(player.idFantacalcio).trim();
+  }
+  // 2. If player.id is numeric
+  if (player.id && /^\d+$/.test(String(player.id).trim())) {
+    return String(player.id).trim();
+  }
+  // 3. Search probabiliMap (from probabili live / defaultProbabili)
+  if (probabiliMap) {
+    const norm = (str: string) => str.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const upper = player.name.toUpperCase().trim();
+    const key = norm(player.name);
+
+    if (probabiliMap[key]?.id && /^\d+$/.test(probabiliMap[key].id)) {
+      return probabiliMap[key].id;
+    }
+    if (probabiliMap[upper]?.id && /^\d+$/.test(probabiliMap[upper].id)) {
+      return probabiliMap[upper].id;
+    }
+    const firstWord = upper.split(/\s+/)[0];
+    if (firstWord && firstWord.length >= 3 && probabiliMap[firstWord]?.id && /^\d+$/.test(probabiliMap[firstWord].id)) {
+      return probabiliMap[firstWord].id;
+    }
+  }
+  // 4. Fallback: string representation
+  return String(player.idFantacalcio || player.id || player.name);
+}
+
+/**
+ * Exports managers' rosters into Leghe Fantacalcio CSV format:
+ * $,$,$
+ * <TeamName>,<PlayerId>,<Price>
+ * $,$,$
+ * <TeamName2>,<PlayerId2>,<Price2>
+ */
+export function exportToLegheFantacalcioCSV(
+  managers: Manager[],
+  probabiliMap?: Record<string, { id: string; name?: string }> | null
+): string {
+  const lines: string[] = [];
+
+  managers.forEach((m) => {
+    const allPlayers: Player[] = [
+      ...m.roster.P,
+      ...m.roster.D,
+      ...m.roster.C,
+      ...m.roster.A
+    ];
+
+    if (allPlayers.length === 0) return;
+
+    lines.push('$,$,$');
+    allPlayers.forEach((p) => {
+      const pid = resolvePlayerId(p, probabiliMap);
+      const price =
+        p.purchasePrice !== null && p.purchasePrice !== undefined && !isNaN(Number(p.purchasePrice))
+          ? Number(p.purchasePrice)
+          : 1;
+      lines.push(`${m.name},${pid},${price}`);
+    });
+  });
+
+  return lines.join('\n');
+}
+
+/**
+ * Generates and triggers the browser download of the Leghe Fantacalcio CSV file.
+ */
+export function downloadLegheFantacalcioCSV(
+  managers: Manager[],
+  auctionName: string,
+  probabiliMap?: Record<string, { id: string; name?: string }> | null
+): void {
+  const csvContent = exportToLegheFantacalcioCSV(managers, probabiliMap);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const safeName = (auctionName || 'Asta').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${safeName}_LegheFantacalcio_Rose_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
