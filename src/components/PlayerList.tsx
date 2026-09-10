@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect } from 'react';
 import { useAuctionStore } from '../store/useAuctionStore';
 import { Role, Player } from '../types';
 import { getRoleColor, getTitolaritaColor, getCreditsFromPMA } from '../utils/calculations';
-import { getPlayerProbabiliStatus } from '../utils/probabiliScraper';
+import { getPlayerProbabiliStatus, getTeamProbabiliUrl } from '../utils/probabiliScraper';
 import { 
   Search, 
   Filter, 
@@ -19,7 +19,8 @@ import {
   Check, 
   X, 
   SlidersHorizontal,
-  Flame
+  Flame,
+  ExternalLink
 } from 'lucide-react';
 
 export const PlayerList: React.FC = () => {
@@ -403,29 +404,69 @@ export const PlayerList: React.FC = () => {
                         <span className="text-amber-400 text-[10px] font-bold">⚽ Rig</span>
                       )}
                       {prob.status === 'titolare' && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-[#00f59b] font-bold">
-                          Tit
-                        </span>
+                        <a
+                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 hover:bg-emerald-500/40 text-[#00f59b] font-bold border border-emerald-500/30 transition hover:scale-105 inline-flex items-center gap-0.5"
+                          title={`Titolare (${prob.titolarita}%). Clicca per vedere la probabile formazione su Fantacalcio.it`}
+                        >
+                          <span>Tit</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                        </a>
                       )}
                       {prob.status === 'ballottaggio' && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
-                          Ball {prob.ballotPct || 50}%
-                        </span>
+                        <a
+                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 font-bold border border-amber-500/30 transition hover:scale-105 inline-flex items-center gap-0.5"
+                          title={`Ballottaggio ${prob.ballotPct || 50}%. Clicca per vedere la probabile formazione su Fantacalcio.it`}
+                        >
+                          <span>Ball {prob.ballotPct || 50}%</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                        </a>
                       )}
                       {prob.status === 'infortunato' && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold">
-                          Inf
-                        </span>
+                        <a
+                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 font-bold border border-rose-500/30 transition hover:scale-105 inline-flex items-center gap-0.5"
+                          title={`Infortunato: ${prob.description || 'Non disponibile'}. Clicca per vedere su Fantacalcio.it`}
+                        >
+                          <span>Inf</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                        </a>
                       )}
                       {prob.status === 'squalificato' && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-rose-600/20 text-rose-400 font-bold">
-                          Squ
-                        </span>
+                        <a
+                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 font-bold border border-rose-600/30 transition hover:scale-105 inline-flex items-center gap-0.5"
+                          title="Squalificato. Clicca per vedere su Fantacalcio.it"
+                        >
+                          <span>Squ</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                        </a>
                       )}
                       {prob.status === 'non_convocato' && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400 border border-white/10 font-bold" title="Non presente nei convocati per questa giornata">
-                          Non conv.
-                        </span>
+                        <a
+                          href={getTeamProbabiliUrl(player.team, player.teamSlug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 border border-white/10 font-bold transition hover:scale-105 inline-flex items-center gap-0.5"
+                          title="Non presente nei convocati per questa giornata. Clicca per vedere la probabile formazione su Fantacalcio.it"
+                        >
+                          <span>Non conv.</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                        </a>
                       )}
                     </div>
                   </div>

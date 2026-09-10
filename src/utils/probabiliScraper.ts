@@ -393,3 +393,67 @@ export function getPlayerProbabiliStatus(
     titolarita: 0
   };
 }
+
+/**
+ * Returns the Fantacalcio.it probabili formazioni URL, targeting the team anchor if possible.
+ */
+export function getTeamProbabiliUrl(teamName?: string, teamSlug?: string): string {
+  const baseUrl = 'https://www.fantacalcio.it/probabili-formazioni-serie-a';
+  if (!teamName && !teamSlug) return baseUrl;
+
+  const raw = (teamName || teamSlug || '').toLowerCase().trim();
+  const slugMap: Record<string, string> = {
+    'atalanta': 'atalanta',
+    'ata': 'atalanta',
+    'bologna': 'bologna',
+    'bol': 'bologna',
+    'cagliari': 'cagliari',
+    'cag': 'cagliari',
+    'como': 'como',
+    'com': 'como',
+    'empoli': 'empoli',
+    'emp': 'empoli',
+    'fiorentina': 'fiorentina',
+    'fio': 'fiorentina',
+    'genoa': 'genoa',
+    'gen': 'genoa',
+    'inter': 'inter',
+    'int': 'inter',
+    'juventus': 'juventus',
+    'juve': 'juventus',
+    'juv': 'juventus',
+    'lazio': 'lazio',
+    'laz': 'lazio',
+    'lecce': 'lecce',
+    'lec': 'lecce',
+    'milan': 'milan',
+    'mil': 'milan',
+    'monza': 'monza',
+    'mon': 'monza',
+    'napoli': 'napoli',
+    'nap': 'napoli',
+    'parma': 'parma',
+    'par': 'parma',
+    'roma': 'roma',
+    'rom': 'roma',
+    'torino': 'torino',
+    'tor': 'torino',
+    'udinese': 'udinese',
+    'udi': 'udinese',
+    'venezia': 'venezia',
+    'ven': 'venezia',
+    'verona': 'hellas-verona',
+    'hellas verona': 'hellas-verona',
+    'ver': 'hellas-verona',
+    'hel': 'hellas-verona'
+  };
+
+  const matched = slugMap[raw];
+  if (matched) {
+    return `${baseUrl}#${matched}`;
+  }
+
+  const slug = raw.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return slug ? `${baseUrl}#${slug}` : baseUrl;
+}
+
