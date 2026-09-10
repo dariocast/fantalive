@@ -125,27 +125,50 @@ export const useAuctionStore = create<AuctionState>()(
         set({ isSyncingProbabili: true });
         try {
           const fetchWithFallback = async (endpoint: string, targetUrl: string) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 7000);
+
             // 1. Try local proxy
             try {
-              const res = await fetch(endpoint);
+              const res = await fetch(endpoint, { signal: controller.signal });
               if (res.ok) {
                 const text = await res.text();
-                if (text && text.length > 500) return text;
+                if (text && text.length > 500) {
+                  clearTimeout(timeoutId);
+                  return text;
+                }
               }
             } catch {
               // ignore
             }
-            // 2. Fallback to public CORS proxy
-            try {
-              const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-              const res = await fetch(proxyUrl);
-              if (res.ok) {
-                const text = await res.text();
-                if (text && text.length > 500) return text;
+
+            // 2. Fallback to public CORS proxies
+            const proxies = [
+              (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+              (u: string) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+              (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
+            ];
+
+            for (const getProxyUrl of proxies) {
+              try {
+                const proxyUrl = getProxyUrl(targetUrl);
+                const proxyCtrl = new AbortController();
+                const pTimeout = setTimeout(() => proxyCtrl.abort(), 5000);
+                const res = await fetch(proxyUrl, { signal: proxyCtrl.signal });
+                clearTimeout(pTimeout);
+                if (res.ok) {
+                  const text = await res.text();
+                  if (text && text.length > 500) {
+                    clearTimeout(timeoutId);
+                    return text;
+                  }
+                }
+              } catch {
+                // try next proxy
               }
-            } catch {
-              // ignore
             }
+
+            clearTimeout(timeoutId);
             return '';
           };
 
@@ -156,13 +179,15 @@ export const useAuctionStore = create<AuctionState>()(
 
           if (htmlProb || htmlInf) {
             const parsed = parseProbabiliAndInfortunatiHtml(htmlProb, htmlInf);
-            set({
-              probabiliData: parsed,
-              lastProbabiliSync: parsed.updatedAt,
-              isSyncingProbabili: false
-            });
-            soundManager.playTick(1200);
-            return;
+            if (parsed && parsed.playersCount > 0) {
+              set({
+                probabiliData: parsed,
+                lastProbabiliSync: parsed.updatedAt,
+                isSyncingProbabili: false
+              });
+              soundManager.playTick(1200);
+              return;
+            }
           }
         } catch (err) {
           console.warn('Could not fetch live probabili/infortunati, using cached snapshot:', err);

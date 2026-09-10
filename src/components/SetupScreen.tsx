@@ -20,11 +20,12 @@ import {
 } from 'lucide-react';
 
 export const SetupScreen: React.FC = () => {
-  const { settings, initAuction, isConfigured, loadCustomPlayers } = useAuctionStore();
+  const { settings, initAuction, isConfigured, loadCustomPlayers, fetchProbabiliLive } = useAuctionStore();
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
+    fetchProbabiliLive();
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);

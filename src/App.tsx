@@ -10,7 +10,11 @@ import { ExportModal } from './components/ExportModal';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 
 export const App: React.FC = () => {
-  const { isConfigured, activeMobileTab, setActiveMobileTab, settings } = useAuctionStore();
+  const { isConfigured, activeMobileTab, setActiveMobileTab, settings, fetchProbabiliLive } = useAuctionStore();
+
+  React.useEffect(() => {
+    fetchProbabiliLive();
+  }, []);
 
   if (!isConfigured) {
     return <SetupScreen />;

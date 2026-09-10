@@ -30,11 +30,8 @@ const unescapeHtml = (str: string) => {
     .replace(/&quot;/g, '"')
     .replace(/&#039;/g, "'")
     .replace(/&#x27;/g, "'")
-    .replace(/&#xE8;/g, 'è')
-    .replace(/&#xE0;/g, 'à')
-    .replace(/&#xF2;/g, 'ò')
-    .replace(/&#xF9;/g, 'ù')
-    .replace(/&#xEC;/g, 'ì')
+    .replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
     .replace(/&eacute;/g, 'é')
     .replace(/&agrave;/g, 'à')
     .replace(/&egrave;/g, 'è')
@@ -92,24 +89,32 @@ export function parseProbabiliAndInfortunatiHtml(
   }
 
   // 2. Parse probabili formazioni page
+  let matchweek = '';
   if (probabiliHtml) {
-    const matchesRaw = probabiliHtml.split(/<li[^>]*class="[^"]*match-item[^"]*"[^>]*>/);
+    const mwMatch = probabiliHtml.match(/<div[^>]*class="[^"]*matchweek[^"]*"[^>]*>(.*?)<\/div>/s);
+    if (mwMatch) {
+      matchweek = stripTags(mwMatch[1]).trim();
+    }
 
-    // Extract matchweek
-    const mwMatch = probabiliHtml.match(/<div[^>]*class="[^"]*matchweek[^"]*"[^>]*>(.*?)<\/div>/);
-    const matchweek = mwMatch ? stripTags(mwMatch[1]) : '2';
+    const matchesRaw = probabiliHtml.split(/<li[^>]*class="[^"]*match-item[^"]*"[^>]*>/);
 
     for (let mIdx = 1; mIdx < matchesRaw.length; mIdx++) {
       const matchHtml = matchesRaw[mIdx];
 
-      // Match Date
+      // Match Date - filter out placeholder/unassigned dates like 01/01 01:00 or 1970
       const mDateMatch = matchHtml.match(/<div[^>]*class="[^"]*match-date[^"]*"[^>]*>(.*?)<\/div>/s);
-      const matchDate = mDateMatch ? stripTags(mDateMatch[1]).replace(/\s+/g, ' ') : '';
+      let matchDate = '';
+      if (mDateMatch) {
+        const rawDate = stripTags(mDateMatch[1]).replace(/\s+/g, ' ').trim();
+        if (rawDate && !rawDate.includes('01/01 01:00') && !rawDate.includes('1970-01-01') && !rawDate.includes('01/01')) {
+          matchDate = rawDate;
+        }
+      }
 
       // Teams
       const teamMatches = Array.from(matchHtml.matchAll(/<a[^>]*class="[^"]*team-name[^"]*"[^>]*>(.*?)<\/a>/gs));
-      const teamNames = teamMatches.map((t) => stripTags(t[1]));
-      const matchTitle = teamNames.join(' vs ');
+      const teamNames = teamMatches.map((t) => stripTags(t[1])).filter(Boolean);
+      const matchTitle = teamNames.length >= 2 ? teamNames.join(' vs ') : '';
 
       // 1. Starters
       const startersBlocks = Array.from(matchHtml.matchAll(/<ul[^>]*class="[^"]*starters[^"]*"[^>]*>(.*?)<\/ul>/gs));
@@ -315,9 +320,6 @@ export function parseProbabiliAndInfortunatiHtml(
       });
     }
   }
-
-  const mwMatch = probabiliHtml.match(/<div[^>]*class="[^"]*matchweek[^"]*"[^>]*>(.*?)<\/div>/);
-  const matchweek = mwMatch ? stripTags(mwMatch[1]) : '2';
 
   return {
     updatedAt: new Date().toISOString(),
