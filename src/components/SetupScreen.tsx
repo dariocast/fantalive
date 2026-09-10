@@ -68,17 +68,32 @@ export const SetupScreen: React.FC = () => {
 
   // Tipologia asta & Cascading sort rules
   const [tipologiaAsta, setTipologiaAsta] = useState<AuctionType>(settings.tipologiaAsta || 'alfabetico');
-  const [sortPreset, setSortPreset] = useState<'alfabetico_ruolo' | 'alfabetico_globale' | 'top_ruolo' | 'squadra' | 'random' | 'custom'>('alfabetico_ruolo');
+  const [sortPreset, setSortPreset] = useState<string>(
+    settings.mode === 'mantra' ? 'portieri_movimento' : 'alfabetico_ruolo'
+  );
   const [sortRules, setSortRules] = useState<SortRule[]>(
-    settings.sortRules || [
-      { field: 'role', direction: 'asc' },
-      { field: 'name', direction: 'asc' }
-    ]
+    settings.sortRules || (
+      settings.mode === 'mantra'
+        ? [
+            { field: 'role_movimento', direction: 'asc' },
+            { field: 'name', direction: 'asc' }
+          ]
+        : [
+            { field: 'role', direction: 'asc' },
+            { field: 'name', direction: 'asc' }
+          ]
+    )
   );
 
-  const handlePresetChange = (preset: 'alfabetico_ruolo' | 'alfabetico_globale' | 'top_ruolo' | 'squadra' | 'random' | 'custom') => {
+  const handlePresetChange = (preset: string) => {
     setSortPreset(preset);
-    if (preset === 'alfabetico_ruolo') {
+    if (preset === 'portieri_movimento') {
+      setTipologiaAsta('alfabetico');
+      setSortRules([
+        { field: 'role_movimento', direction: 'asc' },
+        { field: 'name', direction: 'asc' }
+      ]);
+    } else if (preset === 'alfabetico_ruolo') {
       setTipologiaAsta('alfabetico');
       setSortRules([
         { field: 'role', direction: 'asc' },
@@ -106,6 +121,15 @@ export const SetupScreen: React.FC = () => {
     } else if (preset === 'random') {
       setTipologiaAsta('random');
       setSortRules([]);
+    }
+  };
+
+  const handleModeSwitch = (newMode: AuctionMode) => {
+    setMode(newMode);
+    if (newMode === 'mantra') {
+      handlePresetChange('portieri_movimento');
+    } else {
+      handlePresetChange('alfabetico_ruolo');
     }
   };
 
@@ -322,8 +346,8 @@ export const SetupScreen: React.FC = () => {
           <div className="p-1 bg-[#1a1644] rounded-full flex border border-white/5">
             <button
               type="button"
-              onClick={() => setMode('classic')}
-              className={`flex-1 py-2.5 rounded-full font-bold text-center transition-all ${
+              onClick={() => handleModeSwitch('classic')}
+              className={`flex-1 py-2.5 rounded-full font-bold text-center transition-all cursor-pointer ${
                 mode === 'classic'
                   ? 'bg-[#00f59b] text-[#0d0928] shadow-md shadow-emerald-500/30'
                   : 'text-slate-400 hover:text-white'
@@ -333,8 +357,8 @@ export const SetupScreen: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setMode('mantra')}
-              className={`flex-1 py-2.5 rounded-full font-bold text-center transition-all ${
+              onClick={() => handleModeSwitch('mantra')}
+              className={`flex-1 py-2.5 rounded-full font-bold text-center transition-all cursor-pointer ${
                 mode === 'mantra'
                   ? 'bg-[#00f59b] text-[#0d0928] shadow-md shadow-emerald-500/30'
                   : 'text-slate-400 hover:text-white'
@@ -487,18 +511,48 @@ export const SetupScreen: React.FC = () => {
 
             {/* Presets Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handlePresetChange('alfabetico_ruolo')}
-                className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
-                  sortPreset === 'alfabetico_ruolo'
-                    ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
-                    : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
-                }`}
-              >
-                <span className="font-extrabold text-sm mb-0.5 text-white">🅰️ Alfabetico / Ruolo</span>
-                <span className="text-[10px] text-slate-400">P ➔ D ➔ C ➔ A, Nome A-Z</span>
-              </button>
+              {mode === 'mantra' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handlePresetChange('portieri_movimento')}
+                    className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                      sortPreset === 'portieri_movimento'
+                        ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                        : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
+                    }`}
+                  >
+                    <span className="font-extrabold text-sm mb-0.5 text-white">🧤 Por ➔ 🏃 Movimento</span>
+                    <span className="text-[10px] text-slate-400">Portieri A-Z, poi Movimento A-Z</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePresetChange('alfabetico_ruolo')}
+                    className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                      sortPreset === 'alfabetico_ruolo'
+                        ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                        : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
+                    }`}
+                  >
+                    <span className="font-extrabold text-sm mb-0.5 text-white">🅰️ Macro-Ruoli</span>
+                    <span className="text-[10px] text-slate-400">Por ➔ Difesa ➔ Centro ➔ Attacco</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('alfabetico_ruolo')}
+                  className={`p-2.5 rounded-2xl border text-left transition text-xs flex flex-col justify-between cursor-pointer ${
+                    sortPreset === 'alfabetico_ruolo'
+                      ? 'border-[#00f59b] bg-[#00f59b]/15 text-white font-bold shadow-md shadow-emerald-950/40'
+                      : 'border-white/10 bg-[#1b1747]/60 text-slate-300 hover:bg-[#1b1747]'
+                  }`}
+                >
+                  <span className="font-extrabold text-sm mb-0.5 text-white">🅰️ Alfabetico / Ruolo</span>
+                  <span className="text-[10px] text-slate-400">P ➔ D ➔ C ➔ A, Nome A-Z</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -577,7 +631,7 @@ export const SetupScreen: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="w-20 font-bold text-[#00f59b]">1° Criterio:</span>
                   <select
-                    value={sortRules[0]?.field || 'role'}
+                    value={sortRules[0]?.field || (mode === 'mantra' ? 'role_movimento' : 'role')}
                     onChange={(e) => {
                       const updated = [...sortRules];
                       updated[0] = { field: e.target.value as SortField, direction: 'asc' };
@@ -586,6 +640,7 @@ export const SetupScreen: React.FC = () => {
                     className="flex-1 bg-[#1c174d] border border-white/10 rounded-xl px-3 py-1.5 text-white font-medium outline-none focus:border-[#00f59b]"
                   >
                     <option value="role">Ruolo (P ➔ D ➔ C ➔ A)</option>
+                    <option value="role_movimento">Portieri ➔ Movimento (Mantra)</option>
                     <option value="team">Squadra (A-Z)</option>
                     <option value="slot">Slot (1° ➔ 8°)</option>
                     <option value="name">Nome (A ➔ Z)</option>

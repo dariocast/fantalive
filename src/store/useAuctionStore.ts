@@ -36,7 +36,7 @@ const DEFAULT_FILTERS: FilterState = {
   team: 'ALL',
   slot: 'ALL',
   status: 'free',
-  sortBy: 'slot',
+  sortBy: 'default',
   sortOrder: 'asc'
 };
 
@@ -238,7 +238,7 @@ export const useAuctionStore = create<AuctionState>()(
         }
 
         const rawList = customPlayersList && customPlayersList.length > 0 ? customPlayersList : defaultPlayers;
-        const sortedList = sortPlayerList(rawList, settings.tipologiaAsta, settings.sortRules);
+        const sortedList = sortPlayerList(rawList, settings.tipologiaAsta, settings.sortRules, settings.mode);
         
         // Clean any assignments
         const freshPlayers = sortedList.map((p) => ({
@@ -255,6 +255,7 @@ export const useAuctionStore = create<AuctionState>()(
           selectedPlayerId: freshPlayers[0]?.id || null,
           currentBid: 1,
           history: [],
+          filters: { ...DEFAULT_FILTERS },
           isConfigured: true
         });
       },
@@ -535,7 +536,7 @@ export const useAuctionStore = create<AuctionState>()(
       setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
 
       loadCustomPlayers: (players) => {
-        const sorted = sortPlayerList(players, get().settings.tipologiaAsta, get().settings.sortRules);
+        const sorted = sortPlayerList(players, get().settings.tipologiaAsta, get().settings.sortRules, get().settings.mode);
         set({
           players: sorted,
           selectedPlayerId: sorted[0]?.id || null

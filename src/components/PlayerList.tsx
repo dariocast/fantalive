@@ -120,11 +120,15 @@ export const PlayerList: React.FC = () => {
       return true;
     });
 
-    // Sorting
+    // If sortBy is 'default' (Ordine Asta impostato all'avvio), keep the exact sequence!
+    if (filters.sortBy === 'default') {
+      return list;
+    }
+
+    // Explicit sorting chosen by user in the dropdown
     const roleOrder: Record<Role, number> = { P: 1, D: 2, C: 3, A: 4 };
 
     list = [...list].sort((a, b) => {
-      // If viewing ALL roles, prioritize role hierarchy (P -> D -> C -> A)
       if (filters.role === 'ALL') {
         const rA = roleOrder[a.role] || 99;
         const rB = roleOrder[b.role] || 99;
@@ -286,6 +290,7 @@ export const PlayerList: React.FC = () => {
             onChange={(e) => updateFilters({ sortBy: e.target.value as any })}
             className="bg-[#1e194f] border border-white/10 rounded-xl px-2 py-1.5 text-slate-200 outline-none text-xs font-medium cursor-pointer"
           >
+            <option value="default">Ordine Asta</option>
             <option value="slot">Ordina: Slot</option>
             <option value="pma">Ordina: PMA ↓</option>
             <option value="pfc">Ordina: PFC ↓</option>

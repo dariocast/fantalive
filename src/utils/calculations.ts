@@ -10,6 +10,12 @@ export function comparePlayers(a: Player, b: Player, rule: SortRule): number {
       const rB = roleOrder[b.role] || 99;
       return (rA - rB) * dir;
     }
+    case 'role_movimento': {
+      // In Mantra / Macro: Portieri (P) = 1, Movimento (D, C, A) = 2
+      const isPA = a.role === 'P' ? 1 : 2;
+      const isPB = b.role === 'P' ? 1 : 2;
+      return (isPA - isPB) * dir;
+    }
     case 'name':
       return a.name.localeCompare(b.name, 'it', { sensitivity: 'base' }) * dir;
     case 'team':
@@ -33,7 +39,8 @@ export function comparePlayers(a: Player, b: Player, rule: SortRule): number {
 export function sortPlayerList(
   players: Player[], 
   tipologia: AuctionType = 'alfabetico',
-  customRules?: SortRule[]
+  customRules?: SortRule[],
+  mode: AuctionMode = 'classic'
 ): Player[] {
   const sorted = [...players];
 
@@ -47,6 +54,11 @@ export function sortPlayerList(
 
   const rules: SortRule[] = customRules && customRules.length > 0
     ? customRules
+    : mode === 'mantra'
+    ? [
+        { field: 'role_movimento', direction: 'asc' },
+        { field: 'name', direction: 'asc' }
+      ]
     : tipologia === 'alfabetico'
     ? [
         { field: 'role', direction: 'asc' },

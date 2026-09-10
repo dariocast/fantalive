@@ -52,7 +52,7 @@ export interface Manager {
   roster: ManagerRoster;
 }
 
-export type SortField = 'role' | 'name' | 'slot' | 'pma' | 'pfc' | 'team' | 'fantamedia' | 'titolarita' | 'none';
+export type SortField = 'role' | 'role_movimento' | 'name' | 'slot' | 'pma' | 'pfc' | 'team' | 'fantamedia' | 'titolarita' | 'none';
 export type SortDirection = 'asc' | 'desc';
 
 export interface SortRule {
@@ -93,6 +93,7 @@ export interface FilterState {
   team: 'ALL' | string;
   slot: 'ALL' | number;
   status: 'ALL' | 'free' | 'assigned' | 'unsold';
-  sortBy: 'name' | 'pma' | 'pfc' | 'fantamedia' | 'titolarita' | 'slot' | 'random';
+  sortBy: 'default' | 'name' | 'pma' | 'pfc' | 'fantamedia' | 'titolarita' | 'slot' | 'random';
   sortOrder: 'asc' | 'desc';
 }
+
