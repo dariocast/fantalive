@@ -378,6 +378,11 @@ export const PlayerList: React.FC = () => {
                       <span className={`font-extrabold text-xs sm:text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>
                         {player.name}
                       </span>
+                      {player.roleMantra && (
+                        <span className="px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-mono text-[10px] font-bold shrink-0">
+                          {player.roleMantra}
+                        </span>
+                      )}
                       {player.newArrival && (
                         <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 text-[9px] font-black uppercase">
                           NEW

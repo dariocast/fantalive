@@ -66,9 +66,20 @@ export const OpponentsModal: React.FC = () => {
         {/* Managers Grid */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {managers.map((mgr) => {
-            const maxBid = getMaxBid(mgr, settings.rosterRequirements);
-            const totalRemaining = getTotalRemainingSlots(mgr, settings.rosterRequirements);
-            const totalSlots = Object.values(settings.rosterRequirements).reduce((a, b) => a + b, 0);
+            const maxBid = getMaxBid(mgr, settings.rosterRequirements, settings.mode);
+            const totalRemaining = getTotalRemainingSlots(mgr, settings.rosterRequirements, settings.mode);
+            const totalSlots =
+              settings.mode === 'mantra'
+                ? (settings.rosterRequirements.P || 3) +
+                  (settings.rosterRequirements.movimento !== undefined
+                    ? settings.rosterRequirements.movimento
+                    : (settings.rosterRequirements.D || 8) +
+                      (settings.rosterRequirements.C || 8) +
+                      (settings.rosterRequirements.A || 6))
+                : (settings.rosterRequirements.P || 3) +
+                  (settings.rosterRequirements.D || 8) +
+                  (settings.rosterRequirements.C || 8) +
+                  (settings.rosterRequirements.A || 6);
             const totalFilled = totalSlots - totalRemaining;
 
             return (
@@ -122,7 +133,11 @@ export const OpponentsModal: React.FC = () => {
                               <span className={`w-4 h-4 rounded flex items-center justify-center text-[9px] ${roleStyle.badge}`}>
                                 {role}
                               </span>
-                              <span className="text-slate-300">{role} ({players.length}/{req})</span>
+                              <span className="text-slate-300">
+                                {settings.mode === 'mantra' && role !== 'P'
+                                  ? `${role} (Movimento)`
+                                  : `${role} (${players.length}/${req})`}
+                              </span>
                             </span>
                             <span className="text-slate-400 font-mono">
                               {players.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)} FM
@@ -140,6 +155,11 @@ export const OpponentsModal: React.FC = () => {
                                   }}
                                   className="px-2 py-0.5 rounded-lg bg-[#211956] hover:bg-[#2e2375] text-[11px] text-slate-200 border border-white/5 cursor-pointer transition flex items-center gap-1"
                                 >
+                                  {p.roleMantra && (
+                                    <span className="text-[9px] text-cyan-300 font-mono font-bold">
+                                      [{p.roleMantra}]
+                                    </span>
+                                  )}
                                   <span>{p.name}</span>
                                   <span className="font-mono font-bold text-[#00f59b]">({p.purchasePrice})</span>
                                 </span>

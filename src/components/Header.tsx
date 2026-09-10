@@ -72,11 +72,22 @@ export const Header: React.FC = () => {
     }
   };
 
-  const totalRequiredSlots = Object.values(settings.rosterRequirements).reduce((a, b) => a + b, 0);
-  const userSlotsRemaining = user ? getTotalRemainingSlots(user, settings.rosterRequirements) : 0;
+  const totalRequiredSlots =
+    settings.mode === 'mantra'
+      ? (settings.rosterRequirements.P || 3) +
+        (settings.rosterRequirements.movimento !== undefined
+          ? settings.rosterRequirements.movimento
+          : (settings.rosterRequirements.D || 8) +
+            (settings.rosterRequirements.C || 8) +
+            (settings.rosterRequirements.A || 6))
+      : (settings.rosterRequirements.P || 3) +
+        (settings.rosterRequirements.D || 8) +
+        (settings.rosterRequirements.C || 8) +
+        (settings.rosterRequirements.A || 6);
+  const userSlotsRemaining = user ? getTotalRemainingSlots(user, settings.rosterRequirements, settings.mode) : 0;
   const userSlotsFilled = totalRequiredSlots - userSlotsRemaining;
-  const maxBid = user ? getMaxBid(user, settings.rosterRequirements) : 0;
-  const avgSlotBudget = user ? getAverageBudgetPerRemainingSlot(user, settings.rosterRequirements) : 0;
+  const maxBid = user ? getMaxBid(user, settings.rosterRequirements, settings.mode) : 0;
+  const avgSlotBudget = user ? getAverageBudgetPerRemainingSlot(user, settings.rosterRequirements, settings.mode) : 0;
 
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 

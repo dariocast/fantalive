@@ -148,84 +148,236 @@ export const RosterAndOpponents: React.FC = () => {
             </div>
           )}
 
-          {/* Roles Breakdown (P, D, C, A) */}
-          {(['P', 'D', 'C', 'A'] as Role[]).map((role) => {
-            const roleStyle = getRoleColor(role);
-            const req = settings.rosterRequirements[role] || 0;
-            const boughtPlayers = user ? user.roster[role] || [] : [];
-            const count = boughtPlayers.length;
-            const remaining = Math.max(0, req - count);
-            const spentOnRole = boughtPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0);
+          {/* Roles Breakdown */}
+          {settings.mode === 'mantra' ? (
+            /* Mantra: 2 Reparti (Portieri & Giocatori di Movimento) */
+            <>
+              {/* Portieri */}
+              {(() => {
+                const roleStyle = getRoleColor('P');
+                const req = settings.rosterRequirements.P || 3;
+                const boughtPlayers = user ? user.roster.P || [] : [];
+                const count = boughtPlayers.length;
+                const remaining = Math.max(0, req - count);
+                const spentOnRole = boughtPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0);
 
-            const roleLabels: Record<Role, string> = {
-              P: 'Portieri',
-              D: 'Difensori',
-              C: 'Centrocampisti',
-              A: 'Attaccanti'
-            };
-
-            return (
-              <div key={role} className="bg-[#17123f] p-3.5 rounded-2xl border border-white/10 space-y-2.5 shadow-sm">
-                
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${roleStyle.badge}`}>
-                      {role}
-                    </span>
-                    <span className="font-extrabold text-sm text-white">{roleLabels[role]}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#00f59b]">{spentOnRole} FM</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${count === req ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/5 text-slate-300'}`}>
-                      {count}/{req}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-300"
-                    style={{
-                      width: `${(count / req) * 100}%`,
-                      backgroundColor: roleStyle.accent
-                    }}
-                  />
-                </div>
-
-                {/* Bought Players List */}
-                {boughtPlayers.length > 0 ? (
-                  <div className="space-y-1 pt-1">
-                    {boughtPlayers.map((p) => (
-                      <div
-                        key={p.id}
-                        onClick={() => selectPlayer(p.id)}
-                        className="p-2 rounded-xl bg-[#1e1752] hover:bg-[#281f6c] transition cursor-pointer flex items-center justify-between text-xs border border-white/5"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-bold text-slate-200 truncate">{p.name}</span>
-                          <span className="text-[10px] text-slate-400">{p.team}</span>
-                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-slate-300">
-                            {p.slot}° sl
-                          </span>
-                        </div>
-                        <span className="font-mono font-black text-[#00f59b] shrink-0">
-                          {p.purchasePrice} FM
+                return (
+                  <div className="bg-[#17123f] p-3.5 rounded-2xl border border-amber-500/20 space-y-2.5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${roleStyle.badge}`}>
+                          P
+                        </span>
+                        <span className="font-extrabold text-sm text-white">Portieri</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-[#00f59b]">{spentOnRole} FM</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${count === req ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/5 text-slate-300'}`}>
+                          {count}/{req}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-2 text-[11px] text-slate-500 italic">
-                    Nessun calciatore acquistato ({remaining} slot mancanti)
-                  </div>
-                )}
+                    </div>
 
-              </div>
-            );
-          })}
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(100, (count / req) * 100)}%`,
+                          backgroundColor: roleStyle.accent
+                        }}
+                      />
+                    </div>
+
+                    {boughtPlayers.length > 0 ? (
+                      <div className="space-y-1 pt-1">
+                        {boughtPlayers.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => selectPlayer(p.id)}
+                            className="p-2 rounded-xl bg-[#1e1752] hover:bg-[#281f6c] transition cursor-pointer flex items-center justify-between text-xs border border-white/5"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-bold text-slate-200 truncate">{p.name}</span>
+                              <span className="text-[10px] text-slate-400">{p.team}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-slate-300">
+                                {p.slot}° sl
+                              </span>
+                            </div>
+                            <span className="font-mono font-black text-[#00f59b] shrink-0">
+                              {p.purchasePrice} FM
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-2 text-[11px] text-slate-500 italic">
+                        Nessun portiere acquistato ({remaining} slot mancanti)
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Giocatori di Movimento */}
+              {(() => {
+                const req =
+                  settings.rosterRequirements.movimento !== undefined
+                    ? settings.rosterRequirements.movimento
+                    : (settings.rosterRequirements.D || 8) +
+                      (settings.rosterRequirements.C || 8) +
+                      (settings.rosterRequirements.A || 6);
+                const boughtPlayers = user
+                  ? [...(user.roster.D || []), ...(user.roster.C || []), ...(user.roster.A || [])]
+                  : [];
+                const count = boughtPlayers.length;
+                const remaining = Math.max(0, req - count);
+                const spentOnRole = boughtPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0);
+
+                return (
+                  <div className="bg-[#17123f] p-3.5 rounded-2xl border border-cyan-500/20 space-y-2.5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs bg-cyan-500 text-black">
+                          M
+                        </span>
+                        <span className="font-extrabold text-sm text-white">Giocatori di Movimento</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-[#00f59b]">{spentOnRole} FM</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${count === req ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/5 text-slate-300'}`}>
+                          {count}/{req}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full transition-all duration-300 bg-cyan-400"
+                        style={{
+                          width: `${Math.min(100, (count / req) * 100)}%`
+                        }}
+                      />
+                    </div>
+
+                    {boughtPlayers.length > 0 ? (
+                      <div className="space-y-1 pt-1 max-h-72 overflow-y-auto pr-1">
+                        {boughtPlayers.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => selectPlayer(p.id)}
+                            className="p-2 rounded-xl bg-[#1e1752] hover:bg-[#281f6c] transition cursor-pointer flex items-center justify-between text-xs border border-white/5"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              {p.roleMantra ? (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold shrink-0">
+                                  {p.roleMantra}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-slate-300 font-bold shrink-0">
+                                  {p.role}
+                                </span>
+                              )}
+                              <span className="font-bold text-slate-200 truncate">{p.name}</span>
+                              <span className="text-[10px] text-slate-400">{p.team}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-slate-300">
+                                {p.slot}° sl
+                              </span>
+                            </div>
+                            <span className="font-mono font-black text-[#00f59b] shrink-0">
+                              {p.purchasePrice} FM
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-2 text-[11px] text-slate-500 italic">
+                        Nessun giocatore di movimento acquistato ({remaining} slot mancanti)
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          ) : (
+            /* Classic: 4 Reparti (P, D, C, A) */
+            (['P', 'D', 'C', 'A'] as Role[]).map((role) => {
+              const roleStyle = getRoleColor(role);
+              const req = settings.rosterRequirements[role] || 0;
+              const boughtPlayers = user ? user.roster[role] || [] : [];
+              const count = boughtPlayers.length;
+              const remaining = Math.max(0, req - count);
+              const spentOnRole = boughtPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0);
+
+              const roleLabels: Record<Role, string> = {
+                P: 'Portieri',
+                D: 'Difensori',
+                C: 'Centrocampisti',
+                A: 'Attaccanti'
+              };
+
+              return (
+                <div key={role} className="bg-[#17123f] p-3.5 rounded-2xl border border-white/10 space-y-2.5 shadow-sm">
+                  
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${roleStyle.badge}`}>
+                        {role}
+                      </span>
+                      <span className="font-extrabold text-sm text-white">{roleLabels[role]}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-[#00f59b]">{spentOnRole} FM</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${count === req ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/5 text-slate-300'}`}>
+                        {count}/{req}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full transition-all duration-300"
+                      style={{
+                        width: `${(count / req) * 100}%`,
+                        backgroundColor: roleStyle.accent
+                      }}
+                    />
+                  </div>
+
+                  {/* Bought Players List */}
+                  {boughtPlayers.length > 0 ? (
+                    <div className="space-y-1 pt-1">
+                      {boughtPlayers.map((p) => (
+                        <div
+                          key={p.id}
+                          onClick={() => selectPlayer(p.id)}
+                          className="p-2 rounded-xl bg-[#1e1752] hover:bg-[#281f6c] transition cursor-pointer flex items-center justify-between text-xs border border-white/5"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-bold text-slate-200 truncate">{p.name}</span>
+                            <span className="text-[10px] text-slate-400">{p.team}</span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-slate-300">
+                              {p.slot}° sl
+                            </span>
+                          </div>
+                          <span className="font-mono font-black text-[#00f59b] shrink-0">
+                            {p.purchasePrice} FM
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-2 text-[11px] text-slate-500 italic">
+                      Nessun calciatore acquistato ({remaining} slot mancanti)
+                    </div>
+                  )}
+
+                </div>
+              );
+            })
+          )}
 
         </div>
       )}
@@ -246,9 +398,13 @@ export const RosterAndOpponents: React.FC = () => {
 
           {/* All Managers Table Card */}
           {managers.map((mgr) => {
-            const maxBid = getMaxBid(mgr, settings.rosterRequirements);
-            const totalRemaining = getTotalRemainingSlots(mgr, settings.rosterRequirements);
-            const totalSlots = Object.values(settings.rosterRequirements).reduce((a, b) => a + b, 0);
+            const maxBid = getMaxBid(mgr, settings.rosterRequirements, settings.mode);
+            const movReq =
+              settings.rosterRequirements.movimento !== undefined
+                ? settings.rosterRequirements.movimento
+                : (settings.rosterRequirements.D || 8) +
+                  (settings.rosterRequirements.C || 8) +
+                  (settings.rosterRequirements.A || 6);
 
             return (
               <div
@@ -278,20 +434,31 @@ export const RosterAndOpponents: React.FC = () => {
                 </div>
 
                 {/* Slots Breakdown per Role */}
-                <div className="grid grid-cols-4 gap-1 text-center text-[10px] font-bold">
-                  <div className="bg-amber-500/10 text-amber-300 py-1 rounded-lg border border-amber-500/20">
-                    P: {mgr.roster.P.length}/{settings.rosterRequirements.P}
+                {settings.mode === 'mantra' ? (
+                  <div className="grid grid-cols-2 gap-1 text-center text-[10px] font-bold">
+                    <div className="bg-amber-500/10 text-amber-300 py-1 rounded-lg border border-amber-500/20">
+                      Portieri: {mgr.roster.P.length}/{settings.rosterRequirements.P || 3}
+                    </div>
+                    <div className="bg-cyan-500/10 text-cyan-300 py-1 rounded-lg border border-cyan-500/20">
+                      Movimento: {mgr.roster.D.length + mgr.roster.C.length + mgr.roster.A.length}/{movReq}
+                    </div>
                   </div>
-                  <div className="bg-emerald-500/10 text-emerald-300 py-1 rounded-lg border border-emerald-500/20">
-                    D: {mgr.roster.D.length}/{settings.rosterRequirements.D}
+                ) : (
+                  <div className="grid grid-cols-4 gap-1 text-center text-[10px] font-bold">
+                    <div className="bg-amber-500/10 text-amber-300 py-1 rounded-lg border border-amber-500/20">
+                      P: {mgr.roster.P.length}/{settings.rosterRequirements.P}
+                    </div>
+                    <div className="bg-emerald-500/10 text-emerald-300 py-1 rounded-lg border border-emerald-500/20">
+                      D: {mgr.roster.D.length}/{settings.rosterRequirements.D}
+                    </div>
+                    <div className="bg-blue-500/10 text-blue-300 py-1 rounded-lg border border-blue-500/20">
+                      C: {mgr.roster.C.length}/{settings.rosterRequirements.C}
+                    </div>
+                    <div className="bg-rose-500/10 text-rose-300 py-1 rounded-lg border border-rose-500/20">
+                      A: {mgr.roster.A.length}/{settings.rosterRequirements.A}
+                    </div>
                   </div>
-                  <div className="bg-blue-500/10 text-blue-300 py-1 rounded-lg border border-blue-500/20">
-                    C: {mgr.roster.C.length}/{settings.rosterRequirements.C}
-                  </div>
-                  <div className="bg-rose-500/10 text-rose-300 py-1 rounded-lg border border-rose-500/20">
-                    A: {mgr.roster.A.length}/{settings.rosterRequirements.A}
-                  </div>
-                </div>
+                )}
 
                 {/* Max Offerta */}
                 <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/5 text-[11px] text-slate-400">

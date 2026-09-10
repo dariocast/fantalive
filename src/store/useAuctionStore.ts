@@ -25,7 +25,8 @@ const DEFAULT_SETTINGS: AuctionSettings = {
     P: 3,
     D: 8,
     C: 8,
-    A: 6
+    A: 6,
+    movimento: 22
   }
 };
 

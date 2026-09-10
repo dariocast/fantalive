@@ -71,7 +71,7 @@ export interface AuctionSettings {
   tipologiaAsta: AuctionType; // chiamata / random / alfabetico
   sortRules?: SortRule[]; // Cascading sort criteria
   participantsCount: number; // 6, 8, 10, 12, or custom
-  rosterRequirements: Record<Role, number>; // { P: 3, D: 8, C: 8, A: 6 }
+  rosterRequirements: Record<Role, number> & { movimento?: number }; // { P: 3, D: 8, C: 8, A: 6, movimento?: 22 }
 }
 
 export interface AuctionHistoryItem {

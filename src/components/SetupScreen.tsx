@@ -122,7 +122,9 @@ export const SetupScreen: React.FC = () => {
   ]);
 
   // Roster requirements
-  const [rosterReq, setRosterReq] = useState<Record<Role, number>>(settings.rosterRequirements || { P: 3, D: 8, C: 8, A: 6 });
+  const [rosterReq, setRosterReq] = useState<Record<Role, number> & { movimento?: number }>(
+    settings.rosterRequirements || { P: 3, D: 8, C: 8, A: 6, movimento: 22 }
+  );
 
   // Custom Listone
   const [customPlayersList, setCustomPlayersList] = useState<Player[] | null>(null);
@@ -159,6 +161,22 @@ export const SetupScreen: React.FC = () => {
     const finalBudget = budgetPreset === 'custom' ? customBudget : budgetPreset;
     const finalCount = participantsPreset === 'custom' ? customParticipants : participantsPreset;
 
+    const finalRosterReq: Record<Role, number> & { movimento?: number } = mode === 'mantra'
+      ? {
+          P: rosterReq.P || 3,
+          D: rosterReq.D || 8,
+          C: rosterReq.C || 8,
+          A: rosterReq.A || 6,
+          movimento: rosterReq.movimento !== undefined ? rosterReq.movimento : 22
+        }
+      : {
+          P: rosterReq.P || 3,
+          D: rosterReq.D || 8,
+          C: rosterReq.C || 8,
+          A: rosterReq.A || 6,
+          movimento: (rosterReq.D || 8) + (rosterReq.C || 8) + (rosterReq.A || 6)
+        };
+
     const newSettings: AuctionSettings = {
       name: name.trim() || 'Asta #1',
       mode,
@@ -170,7 +188,7 @@ export const SetupScreen: React.FC = () => {
       tipologiaAsta,
       sortRules,
       participantsCount: trackingMode === 'solo_me' ? 8 : (finalCount > 0 ? finalCount : 8),
-      rosterRequirements: rosterReq
+      rosterRequirements: finalRosterReq
     };
 
     const finalNames = managerNames.slice(0, finalCount);
@@ -716,25 +734,84 @@ export const SetupScreen: React.FC = () => {
                 </div>
 
                 {/* Slot Rosa Limits */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Composizione Rosa (Slot per reparto)
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {(['P', 'D', 'C', 'A'] as Role[]).map((r) => (
-                      <div key={r} className="bg-[#1a1548] p-2.5 rounded-xl border border-white/5 text-center">
-                        <div className="text-xs font-bold text-slate-400 mb-1">Ruolo {r}</div>
-                        <input
-                          type="number"
-                          min="1"
-                          max="20"
-                          value={rosterReq[r]}
-                          onChange={(e) => setRosterReq({ ...rosterReq, [r]: parseInt(e.target.value) || 0 })}
-                          className="w-full bg-[#251e60] text-center font-bold text-white rounded-lg py-1 text-sm outline-none border border-white/10 focus:border-[#00f59b]"
-                        />
-                      </div>
-                    ))}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      {mode === 'mantra' ? 'Composizione Rosa Mantra' : 'Composizione Rosa (Slot per reparto)'}
+                    </label>
+                    <span className="text-xs text-[#00f59b] font-bold">
+                      Totale:{' '}
+                      {mode === 'mantra'
+                        ? (rosterReq.P || 3) + (rosterReq.movimento !== undefined ? rosterReq.movimento : 22)
+                        : (rosterReq.P || 3) + (rosterReq.D || 8) + (rosterReq.C || 8) + (rosterReq.A || 6)}{' '}
+                      calciatori
+                    </span>
                   </div>
+
+                  {mode === 'mantra' ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {/* Portieri */}
+                        <div className="bg-[#1a1548] p-3 rounded-2xl border border-amber-500/20 text-center flex flex-col justify-between">
+                          <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                            <span className="w-5 h-5 rounded-md bg-amber-500 text-black font-black text-xs flex items-center justify-center">
+                              P
+                            </span>
+                            <span className="text-xs font-bold text-amber-300">Portieri</span>
+                          </div>
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={rosterReq.P || 3}
+                            onChange={(e) => setRosterReq({ ...rosterReq, P: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-[#251e60] text-center font-bold text-white rounded-xl py-2 text-base outline-none border border-white/10 focus:border-[#00f59b]"
+                          />
+                        </div>
+
+                        {/* Giocatori di Movimento */}
+                        <div className="bg-[#1a1548] p-3 rounded-2xl border border-cyan-500/20 text-center flex flex-col justify-between">
+                          <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                            <span className="w-5 h-5 rounded-md bg-cyan-500 text-black font-black text-xs flex items-center justify-center">
+                              M
+                            </span>
+                            <span className="text-xs font-bold text-cyan-300">Giocatori di Movimento</span>
+                          </div>
+                          <input
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={rosterReq.movimento !== undefined ? rosterReq.movimento : 22}
+                            onChange={(e) => setRosterReq({ ...rosterReq, movimento: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-[#251e60] text-center font-bold text-white rounded-xl py-2 text-base outline-none border border-white/10 focus:border-[#00f59b]"
+                          />
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-slate-400 bg-white/5 p-2 rounded-xl border border-white/5 leading-relaxed">
+                        ℹ️ <strong>Mantra:</strong> Nessun vincolo fisso tra D, C e A. Puoi acquistare qualsiasi combinazione di ruoli di movimento (Dc, Dd, Ds, E, M, C, T, W, A, Pc) per completare la rosa.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {(['P', 'D', 'C', 'A'] as Role[]).map((r) => {
+                        const labels: Record<Role, string> = { P: 'Portieri', D: 'Difensori', C: 'Centrocampisti', A: 'Attaccanti' };
+                        return (
+                          <div key={r} className="bg-[#1a1548] p-2.5 rounded-xl border border-white/5 text-center">
+                            <div className="text-xs font-bold text-slate-400 mb-1">{r} ({labels[r]})</div>
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              value={rosterReq[r]}
+                              onChange={(e) => setRosterReq({ ...rosterReq, [r]: parseInt(e.target.value) || 0 })}
+                              className="w-full bg-[#251e60] text-center font-bold text-white rounded-lg py-1 text-sm outline-none border border-white/10 focus:border-[#00f59b]"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Managers Names (Only shown when tracking full league) */}

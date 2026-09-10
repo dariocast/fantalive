@@ -1,6 +1,23 @@
 import * as XLSX from 'xlsx';
 import { Player, Role, Manager, AuctionSettings } from '../types';
 
+export function deriveRoleFromMantra(roleMantra: string): Role {
+  if (!roleMantra) return 'C';
+  const rm = roleMantra.toUpperCase().trim();
+  if (rm.includes('POR') || rm === 'P') return 'P';
+
+  const tokens = rm.split(/[\s,;/]+/).map((t) => t.trim()).filter(Boolean);
+
+  // Strikers / Forwards
+  if (tokens.includes('PC') || tokens.includes('A')) return 'A';
+  // Defenders (Central, Right, Left, Braccetto)
+  if (tokens.some((t) => ['DC', 'DD', 'DS', 'B'].includes(t))) return 'D';
+  // Midfielders / Wingers (Mediano, Centrocampista, Trequartista, Esterno, Ala)
+  if (tokens.some((t) => ['M', 'C', 'T', 'E', 'W'].includes(t))) return 'C';
+
+  return 'C';
+}
+
 export function parsePlayerFromRow(row: Record<string, unknown>, index: number): Player | null {
   const getVal = (keys: string[]): unknown => {
     for (const k of keys) {
@@ -18,15 +35,25 @@ export function parsePlayerFromRow(row: Record<string, unknown>, index: number):
   const name = String(getVal(['name', 'nome', 'calciatore', 'player', 'Nome']) || '').trim();
   if (!name) return null;
 
-  let rawRole = String(getVal(['role', 'ruolo', 'r', 'R', 'Ruolo']) || 'C').trim().toUpperCase();
-  if (!['P', 'D', 'C', 'A'].includes(rawRole)) {
-    if (rawRole.startsWith('P')) rawRole = 'P';
-    else if (rawRole.startsWith('D')) rawRole = 'D';
-    else if (rawRole.startsWith('C')) rawRole = 'C';
-    else if (rawRole.startsWith('A')) rawRole = 'A';
-    else rawRole = 'C';
+  const roleMantra = String(getVal(['rolemantra', 'roleMantra', 'mantra', 'RuoloMantra', 'rMantra', 'rmantra']) || '').trim();
+  let rawRole = String(getVal(['role', 'ruolo', 'r', 'R', 'Ruolo']) || '').trim().toUpperCase();
+
+  let role: Role = 'C';
+  if (['P', 'D', 'C', 'A'].includes(rawRole)) {
+    role = rawRole as Role;
+  } else if (rawRole.startsWith('P') && !rawRole.startsWith('PC')) {
+    role = 'P';
+  } else if (rawRole.startsWith('D')) {
+    role = 'D';
+  } else if (rawRole.startsWith('A')) {
+    role = 'A';
+  } else if (rawRole === 'C') {
+    role = 'C';
+  } else if (roleMantra) {
+    role = deriveRoleFromMantra(roleMantra);
+  } else if (rawRole.startsWith('C')) {
+    role = 'C';
   }
-  const role = rawRole as Role;
 
   const team = String(getVal(['team', 'squadra', 'club', 'sq']) || 'Serie A').trim();
   const teamSlug = String(getVal(['teamslug', 'teamSlug', 'sigla', 'sq']) || team.slice(0, 3).toUpperCase()).trim();
@@ -57,7 +84,6 @@ export function parsePlayerFromRow(row: Record<string, unknown>, index: number):
   const fasciaFr = String(getVal(['fasciafr', 'fasciaFr']) || '').trim();
   const commentoFr = String(getVal(['commentofr', 'commentoFr', 'commento', 'note']) || '').trim();
   const newArrival = Boolean(parseIntVal(getVal(['newarrival', 'newArrival', 'nuovo']), 0));
-  const roleMantra = String(getVal(['rolemantra', 'roleMantra', 'mantra']) || '').trim();
 
   let probableStatus = `Titolare (${expectedTitolarita}%)`;
   if (expectedTitolarita < 50) {
@@ -112,19 +138,26 @@ export async function parseExcelFile(file: File): Promise<Player[]> {
           const ws = workbook.Sheets['ALL'];
           allRows = XLSX.utils.sheet_to_json(ws);
         } else {
-          // Check for P, D, C, A sheets or combine all sheets
+          // Check for P, D, C, A or Mantra role sheets (Por, Dc, Dd, Ds, B, M, C, T, E, W, A, Pc)
           for (const sheetName of workbook.SheetNames) {
             if (sheetName.toLowerCase() === 'info') continue;
             const ws = workbook.Sheets[sheetName];
             const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
-            // If the sheet is named P, D, C, or A, ensure the role is set if missing
-            if (['P', 'D', 'C', 'A'].includes(sheetName.toUpperCase())) {
-              rows.forEach((r) => {
-                if (!r.role && !r.ruolo && !r.Role && !r.Ruolo) {
-                  r.role = sheetName.toUpperCase();
+            const sheetUpper = sheetName.toUpperCase().trim();
+
+            rows.forEach((r) => {
+              if (!r.role && !r.ruolo && !r.Role && !r.Ruolo) {
+                if (['P', 'POR'].includes(sheetUpper)) {
+                  r.role = 'P';
+                } else if (['D', 'DC', 'DD', 'DS', 'B'].includes(sheetUpper)) {
+                  r.role = 'D';
+                } else if (['C', 'M', 'T', 'E'].includes(sheetUpper)) {
+                  r.role = 'C';
+                } else if (['A', 'PC', 'W'].includes(sheetUpper)) {
+                  r.role = 'A';
                 }
-              });
-            }
+              }
+            });
             allRows.push(...rows);
           }
         }
@@ -164,19 +197,33 @@ export function exportAuctionToExcel(
 
   // Sheet 1: Tabellone Riepilogo
   const summaryData = managers.map((m) => {
-    return {
-      'Nome Fantallenatore': m.name,
-      'Tipo': m.isUser ? 'TU' : 'Avversario',
-      'Budget Iniziale': settings.totalBudget,
-      'Crediti Residui': m.budget,
-      'Crediti Spesi': m.spent,
-      '% Budget Speso': `${Math.round((m.spent / settings.totalBudget) * 100)}%`,
-      'Portieri (P)': m.roster.P.length,
-      'Difensori (D)': m.roster.D.length,
-      'Centrocampisti (C)': m.roster.C.length,
-      'Attaccanti (A)': m.roster.A.length,
-      'Totale Giocatori': m.roster.P.length + m.roster.D.length + m.roster.C.length + m.roster.A.length
-    };
+    const isMantra = settings.mode === 'mantra';
+    const movementCount = m.roster.D.length + m.roster.C.length + m.roster.A.length;
+    return isMantra
+      ? {
+          'Nome Fantallenatore': m.name,
+          'Tipo': m.isUser ? 'TU' : 'Avversario',
+          'Budget Iniziale': settings.totalBudget,
+          'Crediti Residui': m.budget,
+          'Crediti Spesi': m.spent,
+          '% Budget Speso': `${Math.round((m.spent / settings.totalBudget) * 100)}%`,
+          'Portieri (P)': m.roster.P.length,
+          'Giocatori di Movimento': movementCount,
+          'Totale Giocatori': m.roster.P.length + movementCount
+        }
+      : {
+          'Nome Fantallenatore': m.name,
+          'Tipo': m.isUser ? 'TU' : 'Avversario',
+          'Budget Iniziale': settings.totalBudget,
+          'Crediti Residui': m.budget,
+          'Crediti Spesi': m.spent,
+          '% Budget Speso': `${Math.round((m.spent / settings.totalBudget) * 100)}%`,
+          'Portieri (P)': m.roster.P.length,
+          'Difensori (D)': m.roster.D.length,
+          'Centrocampisti (C)': m.roster.C.length,
+          'Attaccanti (A)': m.roster.A.length,
+          'Totale Giocatori': m.roster.P.length + m.roster.D.length + m.roster.C.length + m.roster.A.length
+        };
   });
   const wsSummary = XLSX.utils.json_to_sheet(summaryData);
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Riepilogo Asta');
@@ -188,7 +235,8 @@ export function exportAuctionToExcel(
       m.roster[role].forEach((p) => {
         detailedRosterRows.push({
           'Fantallenatore': m.name,
-          'Ruolo': p.role,
+          'Ruolo Classic': p.role,
+          'Ruolo Mantra': p.roleMantra || '',
           'Nome Calciatore': p.name,
           'Squadra': p.team,
           'Prezzo Acquisto': p.purchasePrice,

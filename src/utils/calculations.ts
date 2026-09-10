@@ -1,4 +1,4 @@
-import { Manager, Player, Role, AuctionSettings, AuctionType, SortRule } from '../types';
+import { Manager, Player, Role, AuctionSettings, AuctionType, SortRule, AuctionMode } from '../types';
 
 const roleOrder: Record<Role, number> = { P: 1, D: 2, C: 3, A: 4 };
 
@@ -70,31 +70,72 @@ export function sortPlayerList(
   return sorted;
 }
 
-export function getRemainingSlotsForRole(manager: Manager, role: Role, req: Record<Role, number>): number {
+export function getRemainingSlotsForRole(
+  manager: Manager,
+  role: Role,
+  req: Record<Role, number> & { movimento?: number },
+  mode: AuctionMode = 'classic'
+): number {
+  if (mode === 'mantra') {
+    if (role === 'P') {
+      const currentP = manager.roster.P?.length || 0;
+      return Math.max(0, (req.P || 0) - currentP);
+    } else {
+      // All outfield players (D, C, A) count towards the movement quota in Mantra
+      const currentMovement =
+        (manager.roster.D?.length || 0) +
+        (manager.roster.C?.length || 0) +
+        (manager.roster.A?.length || 0);
+      const maxMovement =
+        req.movimento !== undefined
+          ? req.movimento
+          : (req.D || 0) + (req.C || 0) + (req.A || 0);
+      return Math.max(0, maxMovement - currentMovement);
+    }
+  }
+
   const currentCount = manager.roster[role]?.length || 0;
   const maxNeeded = req[role] || 0;
   return Math.max(0, maxNeeded - currentCount);
 }
 
-export function getTotalRemainingSlots(manager: Manager, req: Record<Role, number>): number {
+export function getTotalRemainingSlots(
+  manager: Manager,
+  req: Record<Role, number> & { movimento?: number },
+  mode: AuctionMode = 'classic'
+): number {
+  if (mode === 'mantra') {
+    return (
+      getRemainingSlotsForRole(manager, 'P', req, 'mantra') +
+      getRemainingSlotsForRole(manager, 'D', req, 'mantra')
+    );
+  }
   return (
-    getRemainingSlotsForRole(manager, 'P', req) +
-    getRemainingSlotsForRole(manager, 'D', req) +
-    getRemainingSlotsForRole(manager, 'C', req) +
-    getRemainingSlotsForRole(manager, 'A', req)
+    getRemainingSlotsForRole(manager, 'P', req, 'classic') +
+    getRemainingSlotsForRole(manager, 'D', req, 'classic') +
+    getRemainingSlotsForRole(manager, 'C', req, 'classic') +
+    getRemainingSlotsForRole(manager, 'A', req, 'classic')
   );
 }
 
-export function getMaxBid(manager: Manager, req: Record<Role, number>): number {
-  const remainingSlots = getTotalRemainingSlots(manager, req);
+export function getMaxBid(
+  manager: Manager,
+  req: Record<Role, number> & { movimento?: number },
+  mode: AuctionMode = 'classic'
+): number {
+  const remainingSlots = getTotalRemainingSlots(manager, req, mode);
   if (remainingSlots <= 0) return 0;
   // Each remaining slot after this one must have at least 1 credit reserved
   const reservedForOthers = Math.max(0, remainingSlots - 1);
   return Math.max(0, manager.budget - reservedForOthers);
 }
 
-export function getAverageBudgetPerRemainingSlot(manager: Manager, req: Record<Role, number>): number {
-  const remainingSlots = getTotalRemainingSlots(manager, req);
+export function getAverageBudgetPerRemainingSlot(
+  manager: Manager,
+  req: Record<Role, number> & { movimento?: number },
+  mode: AuctionMode = 'classic'
+): number {
+  const remainingSlots = getTotalRemainingSlots(manager, req, mode);
   if (remainingSlots <= 0) return 0;
   return Math.round((manager.budget / remainingSlots) * 10) / 10;
 }
@@ -141,14 +182,17 @@ export function calculateTargetPrice(
   user: Manager,
   settings: AuctionSettings
 ): { targetPrice: number; maxBidPossible: number; advice: string; statusColor: string } {
-  const maxBidPossible = getMaxBid(user, settings.rosterRequirements);
-  const remainingRoleSlots = getRemainingSlotsForRole(user, player.role, settings.rosterRequirements);
+  const maxBidPossible = getMaxBid(user, settings.rosterRequirements, settings.mode);
+  const remainingRoleSlots = getRemainingSlotsForRole(user, player.role, settings.rosterRequirements, settings.mode);
 
   if (remainingRoleSlots === 0) {
+    const slotLabel = settings.mode === 'mantra'
+      ? (player.role === 'P' ? 'Portieri' : 'Giocatori di movimento')
+      : `Slot ${player.role}`;
     return {
       targetPrice: 0,
       maxBidPossible,
-      advice: `Slot ${player.role} già completati (${settings.rosterRequirements[player.role]}/${settings.rosterRequirements[player.role]})`,
+      advice: `${slotLabel} già completati`,
       statusColor: 'text-rose-400'
     };
   }
@@ -159,7 +203,7 @@ export function calculateTargetPrice(
   const basePrice = Math.max(1, pfcCr > 1 ? pfcCr : pmaCr);
 
   // Remaining budget factor
-  const totalRemaining = getTotalRemainingSlots(user, settings.rosterRequirements);
+  const totalRemaining = getTotalRemainingSlots(user, settings.rosterRequirements, settings.mode);
   const avgSlotBudget = user.budget / Math.max(1, totalRemaining);
 
   let target = basePrice;

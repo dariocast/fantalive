@@ -81,7 +81,7 @@ export const PlayerFocusCard: React.FC = () => {
 
   const roleStyle = player ? getRoleColor(player.role) : getRoleColor('C');
   const targetInfo = player && user ? calculateTargetPrice(player, user, settings) : null;
-  const userRemainingSlots = user && player ? getRemainingSlotsForRole(user, player.role, settings.rosterRequirements) : 0;
+  const userRemainingSlots = user && player ? getRemainingSlotsForRole(user, player.role, settings.rosterRequirements, settings.mode) : 0;
   const userCanBuy = user && player ? (user.budget >= currentBid && userRemainingSlots > 0) : false;
 
   // Keyboard Shortcuts Handler
@@ -663,7 +663,11 @@ export const PlayerFocusCard: React.FC = () => {
             <p className="text-center text-xs text-rose-400 font-semibold flex items-center justify-center gap-1">
               <ShieldAlert className="w-4 h-4" />
               {userRemainingSlots === 0
-                ? `Reparto ${player.role} già al completo (${settings.rosterRequirements[player.role]}/${settings.rosterRequirements[player.role]})`
+                ? (settings.mode === 'mantra'
+                    ? (player.role === 'P'
+                        ? `Portieri già al completo (${user.roster.P.length}/${settings.rosterRequirements.P})`
+                        : `Slot Movimento già al completo (${user.roster.D.length + user.roster.C.length + user.roster.A.length}/${settings.rosterRequirements.movimento !== undefined ? settings.rosterRequirements.movimento : (settings.rosterRequirements.D + settings.rosterRequirements.C + settings.rosterRequirements.A)})`)
+                    : `Reparto ${player.role} già al completo (${settings.rosterRequirements[player.role]}/${settings.rosterRequirements[player.role]})`)
                 : `Budget insufficiente (${user.budget} FM disponibili)`}
             </p>
           )}
@@ -695,9 +699,9 @@ export const PlayerFocusCard: React.FC = () => {
               {/* Grid of Opponent Buttons */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {opponents.map((opp, idx) => {
-                  const oppSlotsRemaining = getRemainingSlotsForRole(opp, player.role, settings.rosterRequirements);
+                  const oppSlotsRemaining = getRemainingSlotsForRole(opp, player.role, settings.rosterRequirements, settings.mode);
                   const oppCanBuy = opp.budget >= currentBid && oppSlotsRemaining > 0;
-                  const oppMaxBid = getMaxBid(opp, settings.rosterRequirements);
+                  const oppMaxBid = getMaxBid(opp, settings.rosterRequirements, settings.mode);
 
                   return (
                     <button
@@ -724,7 +728,11 @@ export const PlayerFocusCard: React.FC = () => {
 
                       <div className="flex items-center justify-between text-[11px] text-slate-400">
                         <span className="font-mono text-[#00f59b] font-bold">{opp.budget} FM</span>
-                        <span className="text-[10px] text-slate-400">Slot {player.role}: {oppSlotsRemaining}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {settings.mode === 'mantra'
+                            ? (player.role === 'P' ? `Portieri: ${oppSlotsRemaining}` : `Movimento: ${oppSlotsRemaining}`)
+                            : `Slot ${player.role}: ${oppSlotsRemaining}`}
+                        </span>
                       </div>
                     </button>
                   );
