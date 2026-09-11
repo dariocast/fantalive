@@ -151,14 +151,17 @@ export const SetupScreen: React.FC = () => {
     settings.rosterRequirements || { P: 3, D: 8, C: 8, A: 6, movimento: 22 }
   );
 
-  // Custom Listone
+  // Listone Calciatori (Default Ufficiale Serie A pre-caricato, File custom opzionale)
+  const defaultList = defaultPlayersRaw as Player[];
   const [customPlayersList, setCustomPlayersList] = useState<Player[] | null>(null);
-  const [fileName, setFileName] = useState<string>('Nessun listone caricato (Seleziona il tuo file .xlsx o .csv)');
+  const [fileName, setFileName] = useState<string>(
+    `Listone Ufficiale Serie A (${defaultList.length} calciatori inclusi)`
+  );
   const [loadingFile, setLoadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Advanced accordion
-  const [showAdvanced, setShowAdvanced] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,9 +179,19 @@ export const SetupScreen: React.FC = () => {
     }
   };
 
+  const handleResetToDefault = () => {
+    setCustomPlayersList(null);
+    setFileName(`Listone Ufficiale Serie A (${defaultList.length} calciatori inclusi)`);
+    setUploadError(null);
+  };
+
   const handleStart = () => {
-    if (!customPlayersList || customPlayersList.length === 0) {
-      setUploadError('Carica prima il tuo file listone (.xlsx o .csv) per iniziare l\'asta');
+    const listToUse = customPlayersList && customPlayersList.length > 0
+      ? customPlayersList
+      : defaultList;
+
+    if (!listToUse || listToUse.length === 0) {
+      setUploadError('Nessun calciatore disponibile per iniziare l\'asta');
       setShowAdvanced(true);
       return;
     }
@@ -217,7 +230,7 @@ export const SetupScreen: React.FC = () => {
     };
 
     const finalNames = managerNames.slice(0, finalCount);
-    initAuction(newSettings, finalNames, customPlayersList);
+    initAuction(newSettings, finalNames, listToUse);
   };
 
   const handleResume = () => {
@@ -765,17 +778,36 @@ export const SetupScreen: React.FC = () => {
                 
                 {/* Listone File Info / Upload */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                    Listone Calciatori
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                      Listone Calciatori (Opzionale)
+                    </label>
+                    <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      {customPlayersList ? 'Personalizzato caricato' : 'Listone Ufficiale attivo'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                     <div className="flex-1 bg-[#1a1548] border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 truncate">
                       {fileName}
                     </div>
+                    
+                    {customPlayersList && (
+                      <button
+                        type="button"
+                        onClick={handleResetToDefault}
+                        className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-semibold transition cursor-pointer"
+                        title="Ripristina Listone Predefinito"
+                      >
+                        Ripristina Default
+                      </button>
+                    )}
+
                     <label className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold cursor-pointer transition flex items-center justify-center gap-1.5 shadow-md">
                       <Upload className="w-3.5 h-3.5" />
-                      {loadingFile ? 'Caricamento...' : 'Carica Listone Excel (.xlsx, .csv)'}
+                      {loadingFile ? 'Caricamento...' : 'Carica Listone Fantaculo (.xlsx, .csv)'}
                       <input
                         type="file"
                         accept=".xlsx,.xls,.csv"
@@ -784,6 +816,11 @@ export const SetupScreen: React.FC = () => {
                       />
                     </label>
                   </div>
+                  
+                  <p className="text-[11px] text-slate-400">
+                    💡 <em>Opzionale:</em> se non carichi un file, l'app usa il listone ufficiale con ruoli Classic/Mantra, ID Fantacalcio e formazioni live. Carica un file Fantaculo per aggiungere Slot, PMA, PFC, fasce e commenti.
+                  </p>
+
                   {uploadError && (
                     <p className="text-xs text-rose-400 font-medium">{uploadError}</p>
                   )}
