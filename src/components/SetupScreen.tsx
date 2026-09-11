@@ -16,16 +16,28 @@ import {
   ChevronUp, 
   Sparkles,
   Play,
-  Smartphone
+  Smartphone,
+  RefreshCw
 } from 'lucide-react';
 
 export const SetupScreen: React.FC = () => {
-  const { settings, initAuction, isConfigured, loadCustomPlayers, fetchProbabiliLive } = useAuctionStore();
+  const { 
+    settings, 
+    initAuction, 
+    isConfigured, 
+    loadCustomPlayers, 
+    fetchProbabiliLive, 
+    fetchQuotazioniLive,
+    liveQuotazioni,
+    isSyncingQuotazioni,
+    lastQuotazioniSync
+  } = useAuctionStore();
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     fetchProbabiliLive();
+    fetchQuotazioniLive();
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -152,14 +164,22 @@ export const SetupScreen: React.FC = () => {
     settings.rosterRequirements || { P: 3, D: 8, C: 8, A: 6, movimento: 22 }
   );
 
-  // Listone Calciatori (Default Ufficiale Serie A pre-caricato, File custom opzionale)
-  const defaultList = defaultPlayersRaw as Player[];
+  // Listone Calciatori (Default Ufficiale Serie A: Live da Fantacalcio.it se disponibile, altrimenti Snapshot integrato)
+  const defaultList = (liveQuotazioni && liveQuotazioni.length > 0)
+    ? liveQuotazioni
+    : (defaultPlayersRaw as Player[]);
+
+  const isLiveSynced = Boolean(liveQuotazioni && liveQuotazioni.length > 0);
   const [customPlayersList, setCustomPlayersList] = useState<Player[] | null>(null);
-  const [fileName, setFileName] = useState<string>(
-    `Listone Ufficiale Serie A (${defaultList.length} calciatori inclusi)`
-  );
+  const [customFileName, setCustomFileName] = useState<string>('');
   const [loadingFile, setLoadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const displayFileName = customPlayersList
+    ? customFileName
+    : (isLiveSynced
+        ? `🟢 Listone Live Fantacalcio.it (${defaultList.length} calciatori sincronizzati)`
+        : `📁 Listone Ufficiale Serie A (${defaultList.length} calciatori inclusi)`);
 
   // Advanced accordion
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -172,7 +192,7 @@ export const SetupScreen: React.FC = () => {
     try {
       const parsed = await parseExcelFile(file);
       setCustomPlayersList(parsed);
-      setFileName(`${file.name} (${parsed.length} calciatori caricati)`);
+      setCustomFileName(`${file.name} (${parsed.length} calciatori caricati)`);
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : 'Errore nel caricamento del file Excel');
     } finally {
@@ -182,7 +202,7 @@ export const SetupScreen: React.FC = () => {
 
   const handleResetToDefault = () => {
     setCustomPlayersList(null);
-    setFileName(`Listone Ufficiale Serie A (${defaultList.length} calciatori inclusi)`);
+    setCustomFileName('');
     setUploadError(null);
   };
 
@@ -808,15 +828,30 @@ export const SetupScreen: React.FC = () => {
                       <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
                       Listone Calciatori (Opzionale)
                     </label>
-                    <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" />
-                      {customPlayersList ? 'Personalizzato caricato' : 'Listone Ufficiale attivo'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        {customPlayersList ? 'Personalizzato caricato' : (isLiveSynced ? `Live Fantacalcio.it (${lastQuotazioniSync || 'aggiornato'})` : 'Listone Ufficiale attivo')}
+                      </span>
+
+                      {!customPlayersList && (
+                        <button
+                          type="button"
+                          onClick={() => fetchQuotazioniLive()}
+                          disabled={isSyncingQuotazioni}
+                          className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-[10px] font-bold flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
+                          title="Risincronizza listone da Fantacalcio.it"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isSyncingQuotazioni ? 'animate-spin text-[#00f59b]' : ''}`} />
+                          {isSyncingQuotazioni ? 'Sincronizzo...' : 'Aggiorna Live'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                     <div className="flex-1 bg-[#1a1548] border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 truncate">
-                      {fileName}
+                      {displayFileName}
                     </div>
                     
                     {customPlayersList && (
@@ -843,7 +878,7 @@ export const SetupScreen: React.FC = () => {
                   </div>
                   
                   <p className="text-[11px] text-slate-400">
-                    💡 <em>Opzionale:</em> se non carichi un file, l'app usa il listone ufficiale con ruoli Classic/Mantra, ID Fantacalcio e formazioni live. Carica un file Fantaculo per aggiungere Slot, PMA, PFC, fasce e commenti.
+                    💡 <em>Opzionale:</em> l'app sincronizza automaticamente il listone ufficiale da Fantacalcio.it con ruoli Classic/Mantra, ID e quotazioni. Carica un file Fantaculo per aggiungere Slot, PMA, PFC, fasce e commenti strategici.
                   </p>
 
                   {uploadError && (

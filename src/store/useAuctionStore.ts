@@ -6,6 +6,7 @@ import defaultProbabiliRaw from '../data/defaultProbabili.json';
 import { soundManager } from '../utils/audio';
 import { getCreditsFromPMA, sortPlayerList } from '../utils/calculations';
 import { parseProbabiliAndInfortunatiHtml, ProbabiliResponse, ProbabiliPlayerInfo } from '../utils/probabiliScraper';
+import { fetchLiveQuotazioni } from '../utils/quotazioniScraper';
 import confetti from 'canvas-confetti';
 
 const defaultPlayers = defaultPlayersRaw as Player[];
@@ -78,8 +79,14 @@ interface AuctionState {
   isSyncingProbabili: boolean;
   lastProbabiliSync: string | null;
 
+  // Live Quotazioni State
+  liveQuotazioni: Player[] | null;
+  isSyncingQuotazioni: boolean;
+  lastQuotazioniSync: string | null;
+
   // Actions
   fetchProbabiliLive: () => Promise<void>;
+  fetchQuotazioniLive: () => Promise<void>;
   setSettings: (settings: Partial<AuctionSettings>) => void;
   initAuction: (settings: AuctionSettings, managerNames?: string[], customPlayers?: Player[]) => void;
   selectPlayer: (playerId: string | number) => void;
@@ -123,6 +130,10 @@ export const useAuctionStore = create<AuctionState>()(
       probabiliData: defaultProbabili,
       isSyncingProbabili: false,
       lastProbabiliSync: defaultProbabili.updatedAt || new Date().toISOString(),
+
+      liveQuotazioni: null,
+      isSyncingQuotazioni: false,
+      lastQuotazioniSync: null,
 
       fetchProbabiliLive: async () => {
         set({ isSyncingProbabili: true });
@@ -202,6 +213,39 @@ export const useAuctionStore = create<AuctionState>()(
           // silently fallback to pre-bundled snapshot
         }
         set({ isSyncingProbabili: false });
+      },
+
+      fetchQuotazioniLive: async () => {
+        set({ isSyncingQuotazioni: true });
+        try {
+          const players = await fetchLiveQuotazioni();
+          if (players && players.length > 200) {
+            // Enrich with live probabili data if available
+            const probState = get().probabiliData?.players || {};
+            const enriched = players.map((p) => {
+              const probInfo = probState[p.id] || probState[p.name.toUpperCase()] || probState[p.name];
+              if (probInfo) {
+                return {
+                  ...p,
+                  expectedTitolarita: probInfo.titolarita ?? p.expectedTitolarita,
+                  probableStatus: probInfo.statusLabel || p.probableStatus,
+                  status: probInfo.status === 'infortunato' || probInfo.status === 'squalificato' ? 'I' : p.status
+                };
+              }
+              return p;
+            });
+
+            set({
+              liveQuotazioni: enriched,
+              lastQuotazioniSync: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+              isSyncingQuotazioni: false
+            });
+            return;
+          }
+        } catch {
+          // fallback silently
+        }
+        set({ isSyncingQuotazioni: false });
       },
 
       setSettings: (newSettings) => {
