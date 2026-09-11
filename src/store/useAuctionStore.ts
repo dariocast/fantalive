@@ -333,24 +333,33 @@ export const useAuctionStore = create<AuctionState>()(
         const updatedPlayers = [...players];
         updatedPlayers[playerIndex] = updatedPlayer;
 
-        // Check Blocco Portieri rule
+        // Check Blocco Portieri rule (1 titolare + max 2 riserve = blocco da 3 portieri)
         const isGkBlock = Boolean(settings.bloccoPortieri && player.role === 'P');
         const blockKeepers: Player[] = [];
         const blockPlayerIds: (string | number)[] = [];
 
         if (isGkBlock) {
-          players.forEach((otherP, idx) => {
-            if (idx !== playerIndex && otherP.role === 'P' && otherP.team === player.team && !otherP.assignedTo) {
-              const assignedGk: Player = {
-                ...otherP,
-                assignedTo: managerId,
-                purchasePrice: 0,
-                assignedAt: new Date().toISOString()
-              };
-              updatedPlayers[idx] = assignedGk;
-              blockKeepers.push(assignedGk);
-              blockPlayerIds.push(otherP.id);
-            }
+          const clubGks = players
+            .map((p, idx) => ({ player: p, originalIndex: idx }))
+            .filter(({ player: otherP, originalIndex }) => 
+              originalIndex !== playerIndex && 
+              otherP.role === 'P' && 
+              otherP.team === player.team && 
+              !otherP.assignedTo
+            )
+            .sort((a, b) => (b.player.expectedTitolarita || 0) - (a.player.expectedTitolarita || 0) || (a.player.slot || 9) - (b.player.slot || 9))
+            .slice(0, 2); // Max 2 riserve per formare il blocco da 3
+
+          clubGks.forEach(({ player: otherP, originalIndex }) => {
+            const assignedGk: Player = {
+              ...otherP,
+              assignedTo: managerId,
+              purchasePrice: 0,
+              assignedAt: new Date().toISOString()
+            };
+            updatedPlayers[originalIndex] = assignedGk;
+            blockKeepers.push(assignedGk);
+            blockPlayerIds.push(otherP.id);
           });
         }
 
@@ -417,21 +426,30 @@ export const useAuctionStore = create<AuctionState>()(
         const updatedPlayers = [...players];
         updatedPlayers[playerIndex] = updatedPlayer;
 
-        // Check Blocco Portieri rule
+        // Check Blocco Portieri rule (1 titolare + max 2 riserve = blocco da 3 portieri)
         const isGkBlock = Boolean(settings.bloccoPortieri && player.role === 'P');
         const blockPlayerIds: (string | number)[] = [];
 
         if (isGkBlock) {
-          players.forEach((otherP, idx) => {
-            if (idx !== playerIndex && otherP.role === 'P' && otherP.team === player.team && !otherP.assignedTo) {
-              updatedPlayers[idx] = {
-                ...otherP,
-                assignedTo: 'OPPONENT',
-                purchasePrice: 0,
-                assignedAt: new Date().toISOString()
-              };
-              blockPlayerIds.push(otherP.id);
-            }
+          const clubGks = players
+            .map((p, idx) => ({ player: p, originalIndex: idx }))
+            .filter(({ player: otherP, originalIndex }) => 
+              originalIndex !== playerIndex && 
+              otherP.role === 'P' && 
+              otherP.team === player.team && 
+              !otherP.assignedTo
+            )
+            .sort((a, b) => (b.player.expectedTitolarita || 0) - (a.player.expectedTitolarita || 0) || (a.player.slot || 9) - (b.player.slot || 9))
+            .slice(0, 2);
+
+          clubGks.forEach(({ originalIndex, player: otherP }) => {
+            updatedPlayers[originalIndex] = {
+              ...otherP,
+              assignedTo: 'OPPONENT',
+              purchasePrice: 0,
+              assignedAt: new Date().toISOString()
+            };
+            blockPlayerIds.push(otherP.id);
           });
         }
 
