@@ -68,6 +68,7 @@ export interface AuctionSettings {
   totalBudget: number; // 250, 500, 1000, or custom
   modDifesa: boolean; // toggle
   imbattibilitaPortiere: boolean; // toggle
+  bloccoPortieri?: boolean; // toggle: acquiring 1 GK automatically assigns all other GKs of the same team at 0 credits
   tipologiaAsta: AuctionType; // chiamata / random / alfabetico
   sortRules?: SortRule[]; // Cascading sort criteria
   participantsCount: number; // 6, 8, 10, 12, or custom
@@ -85,6 +86,7 @@ export interface AuctionHistoryItem {
   managerName: string;
   price: number;
   type: 'assignment' | 'unsold' | 'release';
+  blockPlayerIds?: (string | number)[]; // other GKs assigned at 0 credits in the same block
 }
 
 export interface FilterState {

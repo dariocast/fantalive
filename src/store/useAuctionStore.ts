@@ -294,7 +294,7 @@ export const useAuctionStore = create<AuctionState>()(
 
       assignCurrentPlayer: (managerId, customPrice) => {
         const state = get();
-        const { selectedPlayerId, players, managers, currentBid, history } = state;
+        const { selectedPlayerId, players, managers, currentBid, history, settings } = state;
         const price = customPrice !== undefined ? customPrice : currentBid;
 
         const playerIndex = players.findIndex((p) => String(p.id) === String(selectedPlayerId));
@@ -333,11 +333,32 @@ export const useAuctionStore = create<AuctionState>()(
         const updatedPlayers = [...players];
         updatedPlayers[playerIndex] = updatedPlayer;
 
+        // Check Blocco Portieri rule
+        const isGkBlock = Boolean(settings.bloccoPortieri && player.role === 'P');
+        const blockKeepers: Player[] = [];
+        const blockPlayerIds: (string | number)[] = [];
+
+        if (isGkBlock) {
+          players.forEach((otherP, idx) => {
+            if (idx !== playerIndex && otherP.role === 'P' && otherP.team === player.team && !otherP.assignedTo) {
+              const assignedGk: Player = {
+                ...otherP,
+                assignedTo: managerId,
+                purchasePrice: 0,
+                assignedAt: new Date().toISOString()
+              };
+              updatedPlayers[idx] = assignedGk;
+              blockKeepers.push(assignedGk);
+              blockPlayerIds.push(otherP.id);
+            }
+          });
+        }
+
         // Update manager roster and budget
         const updatedManagers = [...managers];
         const updatedManagerRoster = {
           ...manager.roster,
-          [player.role]: [...manager.roster[player.role], updatedPlayer]
+          [player.role]: [...manager.roster[player.role], updatedPlayer, ...blockKeepers]
         };
 
         updatedManagers[managerIndex] = {
@@ -357,7 +378,8 @@ export const useAuctionStore = create<AuctionState>()(
           managerId: manager.id,
           managerName: manager.name,
           price,
-          type: 'assignment'
+          type: 'assignment',
+          blockPlayerIds: blockPlayerIds.length > 0 ? blockPlayerIds : undefined
         };
 
         // Automatically advance to next free player
@@ -376,7 +398,7 @@ export const useAuctionStore = create<AuctionState>()(
 
       assignToGenericOpponent: (customPrice?: number) => {
         const state = get();
-        const { selectedPlayerId, players, history, currentBid } = state;
+        const { selectedPlayerId, players, history, currentBid, settings } = state;
         const playerIndex = players.findIndex((p) => String(p.id) === String(selectedPlayerId));
         if (playerIndex === -1) return;
 
@@ -395,6 +417,24 @@ export const useAuctionStore = create<AuctionState>()(
         const updatedPlayers = [...players];
         updatedPlayers[playerIndex] = updatedPlayer;
 
+        // Check Blocco Portieri rule
+        const isGkBlock = Boolean(settings.bloccoPortieri && player.role === 'P');
+        const blockPlayerIds: (string | number)[] = [];
+
+        if (isGkBlock) {
+          players.forEach((otherP, idx) => {
+            if (idx !== playerIndex && otherP.role === 'P' && otherP.team === player.team && !otherP.assignedTo) {
+              updatedPlayers[idx] = {
+                ...otherP,
+                assignedTo: 'OPPONENT',
+                purchasePrice: 0,
+                assignedAt: new Date().toISOString()
+              };
+              blockPlayerIds.push(otherP.id);
+            }
+          });
+        }
+
         const historyItem: AuctionHistoryItem = {
           id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
           timestamp: Date.now(),
@@ -405,7 +445,8 @@ export const useAuctionStore = create<AuctionState>()(
           managerId: 'OPPONENT',
           managerName: 'Avversario',
           price,
-          type: 'assignment'
+          type: 'assignment',
+          blockPlayerIds: blockPlayerIds.length > 0 ? blockPlayerIds : undefined
         };
 
         // Automatically advance to next free player
@@ -484,15 +525,30 @@ export const useAuctionStore = create<AuctionState>()(
           assignedAt: null
         };
 
+        if (lastAction.blockPlayerIds && lastAction.blockPlayerIds.length > 0) {
+          lastAction.blockPlayerIds.forEach((bId) => {
+            const bIdx = updatedPlayers.findIndex((p) => String(p.id) === String(bId));
+            if (bIdx !== -1) {
+              updatedPlayers[bIdx] = {
+                ...updatedPlayers[bIdx],
+                assignedTo: null,
+                purchasePrice: null,
+                assignedAt: null
+              };
+            }
+          });
+        }
+
         let updatedManagers = [...managers];
         if (lastAction.type === 'assignment') {
           const managerIndex = managers.findIndex((m) => m.id === lastAction.managerId);
           if (managerIndex !== -1) {
             const manager = managers[managerIndex];
             const role = lastAction.playerRole;
+            const blockSet = new Set([String(lastAction.playerId), ...(lastAction.blockPlayerIds || []).map(String)]);
             const updatedRoster = {
               ...manager.roster,
-              [role]: manager.roster[role].filter((p) => String(p.id) !== String(lastAction.playerId))
+              [role]: manager.roster[role].filter((p) => !blockSet.has(String(p.id)))
             };
             updatedManagers[managerIndex] = {
               ...manager,

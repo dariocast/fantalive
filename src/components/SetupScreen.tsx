@@ -65,6 +65,7 @@ export const SetupScreen: React.FC = () => {
   // Switches
   const [modDifesa, setModDifesa] = useState(settings.modDifesa || false);
   const [imbattibilitaPortiere, setImbattibilitaPortiere] = useState(settings.imbattibilitaPortiere !== undefined ? settings.imbattibilitaPortiere : true);
+  const [bloccoPortieri, setBloccoPortieri] = useState(settings.bloccoPortieri !== undefined ? settings.bloccoPortieri : true);
 
   // Tipologia asta & Cascading sort rules
   const [tipologiaAsta, setTipologiaAsta] = useState<AuctionType>(settings.tipologiaAsta || 'alfabetico');
@@ -223,6 +224,7 @@ export const SetupScreen: React.FC = () => {
       totalBudget: finalBudget > 0 ? finalBudget : 500,
       modDifesa,
       imbattibilitaPortiere,
+      bloccoPortieri,
       tipologiaAsta,
       sortRules,
       participantsCount: trackingMode === 'solo_me' ? 8 : (finalCount > 0 ? finalCount : 8),
@@ -470,43 +472,66 @@ export const SetupScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Modificatore di difesa & Imbattibilità portiere */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          {/* Modificatore di difesa & Imbattibilità portiere & Blocco Portieri */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
             {/* Modificatore difesa */}
-            <div className="flex items-center justify-between sm:justify-start gap-4">
-              <label className="text-slate-300 font-semibold text-base">
-                Modificatore di difesa:
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-[#1a1548]/70 border border-white/5">
+              <label className="text-slate-300 font-semibold text-xs sm:text-sm">
+                Modificatore difesa
               </label>
               <button
                 type="button"
                 onClick={() => setModDifesa(!modDifesa)}
-                className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ease-in-out border ${
+                className={`w-12 h-7 rounded-full p-0.5 transition-colors duration-300 ease-in-out border shrink-0 ${
                   modDifesa ? 'bg-[#00f59b] border-emerald-400' : 'bg-[#252055] border-white/20'
                 }`}
               >
                 <div
-                  className={`w-6 h-6 rounded-full bg-white transition-transform duration-300 ease-in-out shadow-md ${
-                    modDifesa ? 'translate-x-6' : 'translate-x-0'
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-300 ease-in-out shadow-md ${
+                    modDifesa ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
             </div>
 
             {/* Imbattibilità portiere */}
-            <div className="flex items-center justify-between sm:justify-start gap-4">
-              <label className="text-slate-300 font-semibold text-base">
-                Imbattibilità portiere:
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-[#1a1548]/70 border border-white/5">
+              <label className="text-slate-300 font-semibold text-xs sm:text-sm">
+                Imbattibilità portiere
               </label>
               <button
                 type="button"
                 onClick={() => setImbattibilitaPortiere(!imbattibilitaPortiere)}
-                className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ease-in-out border ${
+                className={`w-12 h-7 rounded-full p-0.5 transition-colors duration-300 ease-in-out border shrink-0 ${
                   imbattibilitaPortiere ? 'bg-[#00f59b] border-emerald-400' : 'bg-[#252055] border-white/20'
                 }`}
               >
                 <div
-                  className={`w-6 h-6 rounded-full bg-white transition-transform duration-300 ease-in-out shadow-md ${
-                    imbattibilitaPortiere ? 'translate-x-6' : 'translate-x-0'
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-300 ease-in-out shadow-md ${
+                    imbattibilitaPortiere ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Blocco squadra portieri */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-[#1a1548]/70 border border-white/5" title="Assegna automaticamente l'intero pacchetto portieri della stessa squadra (titolare al prezzo d'asta, riserve a 0 crediti)">
+              <div>
+                <label className="text-slate-300 font-semibold text-xs sm:text-sm block">
+                  Blocco portieri
+                </label>
+                <span className="text-[10px] text-slate-400 block">Riserve club a 0 FM</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBloccoPortieri(!bloccoPortieri)}
+                className={`w-12 h-7 rounded-full p-0.5 transition-colors duration-300 ease-in-out border shrink-0 ${
+                  bloccoPortieri ? 'bg-[#00f59b] border-emerald-400' : 'bg-[#252055] border-white/20'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-300 ease-in-out shadow-md ${
+                    bloccoPortieri ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
