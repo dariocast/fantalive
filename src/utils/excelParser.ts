@@ -1,5 +1,61 @@
 import * as XLSX from 'xlsx';
 import { Player, Role, Manager, AuctionSettings } from '../types';
+import masterPlayersRaw from '../data/fantacalcioMasterPlayers.json';
+
+const masterPlayers = masterPlayersRaw as Record<string, { id: string; name?: string; team?: string }>;
+
+export function normalizePlayerName(str: string): string {
+  return String(str || '')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+export function findMasterPlayerId(name: string, team?: string, teamSlug?: string): string | null {
+  const normName = normalizePlayerName(name);
+  if (!normName) return null;
+
+  if (team) {
+    const normTeam = normalizePlayerName(team);
+    const keyWithTeam = `${normName}_${normTeam}`;
+    if (masterPlayers[keyWithTeam]?.id && /^\d+$/.test(masterPlayers[keyWithTeam].id)) {
+      return masterPlayers[keyWithTeam].id;
+    }
+  }
+
+  if (teamSlug) {
+    const normSlug = normalizePlayerName(teamSlug);
+    const keyWithSlug = `${normName}_${normSlug}`;
+    if (masterPlayers[keyWithSlug]?.id && /^\d+$/.test(masterPlayers[keyWithSlug].id)) {
+      return masterPlayers[keyWithSlug].id;
+    }
+  }
+
+  if (masterPlayers[normName]?.id && /^\d+$/.test(masterPlayers[normName].id)) {
+    return masterPlayers[normName].id;
+  }
+
+  // Handle abbreviated names like "SANTOS A." or "VARELA G."
+  const cleanName = name.replace(/[.\-_']/g, ' ').trim();
+  const tokens = cleanName.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const firstTokenNorm = normalizePlayerName(tokens[0]);
+    if (firstTokenNorm.length >= 3) {
+      if (team) {
+        const key = `${firstTokenNorm}_${normalizePlayerName(team)}`;
+        if (masterPlayers[key]?.id && /^\d+$/.test(masterPlayers[key].id)) {
+          return masterPlayers[key].id;
+        }
+      }
+      if (masterPlayers[firstTokenNorm]?.id && /^\d+$/.test(masterPlayers[firstTokenNorm].id)) {
+        return masterPlayers[firstTokenNorm].id;
+      }
+    }
+  }
+
+  return null;
+}
 
 export function deriveRoleFromMantra(roleMantra: string): Role {
   if (!roleMantra) return 'C';
@@ -57,7 +113,17 @@ export function parsePlayerFromRow(row: Record<string, unknown>, index: number):
 
   const team = String(getVal(['team', 'squadra', 'club', 'sq']) || 'Serie A').trim();
   const teamSlug = String(getVal(['teamslug', 'teamSlug', 'sigla', 'sq']) || team.slice(0, 3).toUpperCase()).trim();
-  const idFantacalcio = String(getVal(['idfantacalcio', 'idFantacalcio', 'id', 'ID']) || `${teamSlug}_${name}_${index}`);
+  
+  const rawId = String(getVal(['idfantacalcio', 'idFantacalcio', 'id', 'ID']) || '').trim();
+  let idFantacalcio = rawId;
+  if (!idFantacalcio || !/^\d+$/.test(idFantacalcio)) {
+    const foundId = findMasterPlayerId(name, team, teamSlug);
+    if (foundId) {
+      idFantacalcio = foundId;
+    } else {
+      idFantacalcio = rawId || `${teamSlug}_${name}_${index}`;
+    }
+  }
 
   const parseNum = (val: unknown, def = 0): number => {
     if (val === undefined || val === null || val === '') return def;
@@ -273,7 +339,7 @@ export function exportAuctionToExcel(
 
 /**
  * Resolves the numeric Fantacalcio ID for a player.
- * Checks player.idFantacalcio, player.id, and falls back to probabiliMap lookup.
+ * Checks player.idFantacalcio, player.id, master dataset, and falls back to probabiliMap lookup.
  */
 export function resolvePlayerId(
   player: Player,
@@ -287,24 +353,31 @@ export function resolvePlayerId(
   if (player.id && /^\d+$/.test(String(player.id).trim())) {
     return String(player.id).trim();
   }
-  // 3. Search probabiliMap (from probabili live / defaultProbabili)
+  // 3. Search master players database
+  const masterId = findMasterPlayerId(player.name, player.team, player.teamSlug);
+  if (masterId) {
+    return masterId;
+  }
+  // 4. Search probabiliMap (from probabili live / defaultProbabili)
   if (probabiliMap) {
-    const norm = (str: string) => str.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const normKey = normalizePlayerName(player.name);
     const upper = player.name.toUpperCase().trim();
-    const key = norm(player.name);
 
-    if (probabiliMap[key]?.id && /^\d+$/.test(probabiliMap[key].id)) {
-      return probabiliMap[key].id;
+    if (probabiliMap[normKey]?.id && /^\d+$/.test(probabiliMap[normKey].id)) {
+      return probabiliMap[normKey].id;
     }
     if (probabiliMap[upper]?.id && /^\d+$/.test(probabiliMap[upper].id)) {
       return probabiliMap[upper].id;
     }
-    const firstWord = upper.split(/\s+/)[0];
-    if (firstWord && firstWord.length >= 3 && probabiliMap[firstWord]?.id && /^\d+$/.test(probabiliMap[firstWord].id)) {
-      return probabiliMap[firstWord].id;
+    const cleanTokens = player.name.replace(/[.\-_']/g, ' ').trim().split(/\s+/);
+    if (cleanTokens.length > 0 && cleanTokens[0].length >= 3) {
+      const firstWord = normalizePlayerName(cleanTokens[0]);
+      if (probabiliMap[firstWord]?.id && /^\d+$/.test(probabiliMap[firstWord].id)) {
+        return probabiliMap[firstWord].id;
+      }
     }
   }
-  // 4. Fallback: string representation
+  // 5. Fallback: string representation
   return String(player.idFantacalcio || player.id || player.name);
 }
 

@@ -1,12 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuctionStore } from '../store/useAuctionStore';
-import { exportAuctionToExcel, downloadLegheFantacalcioCSV, exportToLegheFantacalcioCSV } from '../utils/excelParser';
-import { X, Download, FileSpreadsheet, Check, Share2, Copy, FileText, Info } from 'lucide-react';
+import { exportAuctionToExcel, downloadLegheFantacalcioCSV, exportToLegheFantacalcioCSV, resolvePlayerId } from '../utils/excelParser';
+import { X, Download, FileSpreadsheet, Check, Share2, Copy, FileText, Info, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export const ExportModal: React.FC = () => {
   const { exportModalOpen, setExportModalOpen, managers, players, settings, probabiliData } = useAuctionStore();
   const [copiedText, setCopiedText] = useState(false);
   const [copiedCSV, setCopiedCSV] = useState(false);
+
+  const totalAssignedPlayers = useMemo(() => {
+    return managers.reduce(
+      (sum, m) => sum + m.roster.P.length + m.roster.D.length + m.roster.C.length + m.roster.A.length,
+      0
+    );
+  }, [managers]);
+
+  const unmappedPlayers = useMemo(() => {
+    const list: { name: string; manager: string; team: string }[] = [];
+    managers.forEach((m) => {
+      [...m.roster.P, ...m.roster.D, ...m.roster.C, ...m.roster.A].forEach((p) => {
+        const resolved = resolvePlayerId(p, probabiliData?.players);
+        if (!/^\d+$/.test(resolved)) {
+          list.push({ name: p.name, manager: m.name, team: p.team });
+        }
+      });
+    });
+    return list;
+  }, [managers, probabiliData]);
 
   if (!exportModalOpen) return null;
 
@@ -90,6 +110,26 @@ export const ExportModal: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Validation status badge */}
+            {totalAssignedPlayers > 0 && (
+              unmappedPlayers.length === 0 ? (
+                <div className="flex items-center gap-2 text-xs text-[#00f59b] font-medium bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-[#00f59b]" />
+                  <span><strong>{totalAssignedPlayers}/{totalAssignedPlayers}</strong> calciatori pronti con ID numerico ufficiale</span>
+                </div>
+              ) : (
+                <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/25 px-3 py-2 rounded-xl space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                    <span>{unmappedPlayers.length} calciatori senza ID numerico:</span>
+                  </div>
+                  <div className="text-[11px] text-slate-300">
+                    {unmappedPlayers.map((u) => `${u.name} (${u.team})`).join(', ')}
+                  </div>
+                </div>
+              )
+            )}
 
             <div className="flex items-center gap-2 pt-1">
               <button
