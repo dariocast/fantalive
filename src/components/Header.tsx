@@ -19,8 +19,14 @@ import {
   Settings2
 } from 'lucide-react';
 import { getMaxBid, getTotalRemainingSlots, getAverageBudgetPerRemainingSlot, getRoleColor } from '../utils/calculations';
+import { APP_VERSION } from '../version';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenInstallModal?: () => void;
+  isInstalled?: boolean;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenInstallModal, isInstalled }) => {
   const { 
     settings, 
     managers, 
@@ -44,31 +50,10 @@ export const Header: React.FC = () => {
   const activePlayer = players.find((p) => String(p.id) === String(selectedPlayerId));
   const roleStyle = activePlayer ? getRoleColor(activePlayer.role) : null;
   const [isFullscreen, setIsFullscreen] = React.useState(false);
-  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
 
-  React.useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstallPwa = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-      }
-    } else {
-      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-      if (isIos) {
-        alert('Per installare come app su iPhone/iPad:\n1. Tocca il tasto Condividi 📤 in basso in Safari\n2. Scorri e tocca "Aggiungi alla schermata Home" ➕');
-      } else {
-        alert('Per installare l\'app:\nApri il menu del browser (⋮ in alto a destra) e seleziona "Installa app" o "Aggiungi a schermata Home".');
-      }
+  const handleInstallPwa = () => {
+    if (onOpenInstallModal) {
+      onOpenInstallModal();
     }
   };
 
@@ -181,6 +166,18 @@ export const Header: React.FC = () => {
             <Sparkles className={`w-3.5 h-3.5 ${isSyncingProbabili ? 'animate-spin' : 'text-[#00f59b]'}`} />
             <span>{isSyncingProbabili ? 'Sync...' : (probabiliData?.matchweek ? probabiliData.matchweek : 'Probabili')}</span>
           </button>
+
+          {/* Quick PWA Install Button (Desktop & Tablet) */}
+          {!isInstalled && onOpenInstallModal && (
+            <button
+              onClick={onOpenInstallModal}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 border border-emerald-500/40 text-[#00f59b] text-xs font-bold transition shadow-sm cursor-pointer animate-pulse"
+              title="Installa FantaLive come App"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Installa App</span>
+            </button>
+          )}
 
           {/* MAIN SETTINGS & ACTIONS DROPDOWN BUTTON (ICON ONLY ON MOBILE) */}
           <button
@@ -321,7 +318,7 @@ export const Header: React.FC = () => {
                 </button>
 
                 {/* Divider */}
-                <div className="border-t border-white/10 pt-1">
+                <div className="border-t border-white/10 pt-1 space-y-1">
                   {/* 8. Reset / New Auction */}
                   <button
                     onClick={() => {
@@ -335,6 +332,12 @@ export const Header: React.FC = () => {
                     <RotateCcw className="w-4 h-4" />
                     <span className="font-semibold text-xs sm:text-sm">Reimposta Asta / Setup</span>
                   </button>
+
+                  {/* Version Info */}
+                  <div className="px-3 py-1 flex items-center justify-between text-[11px] text-slate-300 font-mono">
+                    <span>Versione</span>
+                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-[#00f59b] font-bold">{APP_VERSION}</span>
+                  </div>
                 </div>
 
               </div>

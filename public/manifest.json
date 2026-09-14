@@ -1,10 +1,12 @@
 {
-  "name": "FantaLive Companion",
+  "name": "FantaLive Companion - Assistente Asta Fantacalcio",
   "short_name": "FantaLive",
+  "description": "Assistente d'asta Fantacalcio Classic e Mantra a latenza zero. Calcolo Max Bid istantaneo, gestione rose avversari, listone quotazioni e probabili formazioni 100% offline.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#09081a",
   "theme_color": "#09081a",
@@ -33,6 +35,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Asta Live",
+      "short_name": "Asta",
+      "description": "Apri la schermata di battuta live",
+      "url": "./",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Listone Giocatori",
+      "short_name": "Listone",
+      "description": "Consulta listone e formazioni",
+      "url": "./",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

@@ -19,8 +19,14 @@ import {
   Smartphone,
   RefreshCw
 } from 'lucide-react';
+import { APP_VERSION } from '../version';
 
-export const SetupScreen: React.FC = () => {
+interface SetupScreenProps {
+  onOpenInstallModal?: () => void;
+  isInstalled?: boolean;
+}
+
+export const SetupScreen: React.FC<SetupScreenProps> = ({ onOpenInstallModal, isInstalled }) => {
   const { 
     settings, 
     initAuction, 
@@ -33,33 +39,14 @@ export const SetupScreen: React.FC = () => {
     lastQuotazioniSync
   } = useAuctionStore();
 
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
   useEffect(() => {
     fetchProbabiliLive();
     fetchQuotazioniLive();
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  const handleInstallPwa = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-      }
-    } else {
-      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-      if (isIos) {
-        alert('Per installare come app su iPhone/iPad:\n1. Tocca il tasto Condividi 📤 in Safari\n2. Scorri e tocca "Aggiungi alla schermata Home" ➕');
-      } else {
-        alert('Per installare l\'app:\nApri il menu del browser (⋮ in alto a destra) e seleziona "Installa app" o "Aggiungi a schermata Home".');
-      }
+  const handleInstallPwa = () => {
+    if (onOpenInstallModal) {
+      onOpenInstallModal();
     }
   };
 
@@ -274,9 +261,14 @@ export const SetupScreen: React.FC = () => {
               ⚽
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                FantaLive Companion
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+                  FantaLive Companion
+                </h1>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-[#00f59b] font-mono text-[10px] font-bold border border-emerald-500/30">
+                  {APP_VERSION}
+                </span>
+              </div>
               <p className="text-xs sm:text-sm text-slate-400 font-medium">
                 Configurazione pre-asta live a latenza zero
               </p>
@@ -284,15 +276,17 @@ export const SetupScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleInstallPwa}
-              className="px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-              title="Installa come Web App (PWA) sul tuo dispositivo"
-            >
-              <Smartphone className="w-3.5 h-3.5 text-purple-300" />
-              <span className="hidden sm:inline">Installa App</span>
-            </button>
+            {!isInstalled && (
+              <button
+                type="button"
+                onClick={handleInstallPwa}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 border border-emerald-500/40 text-[#00f59b] text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                title="Installa come Web App (PWA) sul tuo dispositivo"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Installa App</span>
+              </button>
+            )}
 
             {isConfigured && (
               <button

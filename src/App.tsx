@@ -9,22 +9,60 @@ import { OpponentsModal } from './components/OpponentsModal';
 import { ExportModal } from './components/ExportModal';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 import { TeamFormationModal } from './components/TeamFormationModal';
+import { PwaInstallModal } from './components/PwaInstallModal';
+import { PwaInstallBanner } from './components/PwaInstallBanner';
+import { usePwaInstall } from './hooks/usePwaInstall';
 
 export const App: React.FC = () => {
   const { isConfigured, activeMobileTab, setActiveMobileTab, settings, fetchProbabiliLive } = useAuctionStore();
+  const {
+    canInstall,
+    isInstalled,
+    isIos,
+    isModalOpen,
+    isBannerVisible,
+    promptInstall,
+    openInstallModal,
+    closeInstallModal,
+    dismissBanner
+  } = usePwaInstall();
 
   React.useEffect(() => {
     fetchProbabiliLive();
   }, []);
 
   if (!isConfigured) {
-    return <SetupScreen />;
+    return (
+      <>
+        <SetupScreen onOpenInstallModal={openInstallModal} isInstalled={isInstalled} />
+        <PwaInstallBanner 
+          isVisible={isBannerVisible} 
+          onOpenModal={openInstallModal} 
+          onDismiss={dismissBanner} 
+        />
+        <PwaInstallModal 
+          isOpen={isModalOpen}
+          onClose={closeInstallModal}
+          canInstall={canInstall}
+          onPromptInstall={promptInstall}
+          isIos={isIos}
+          isInstalled={isInstalled}
+        />
+      </>
+    );
   }
 
   return (
     <div className="min-h-screen bg-[#09081a] text-slate-100 flex flex-col selection:bg-[#00f59b] selection:text-black">
+      {/* Non-intrusive PWA Promotion Banner */}
+      <PwaInstallBanner 
+        isVisible={isBannerVisible} 
+        onOpenModal={openInstallModal} 
+        onDismiss={dismissBanner} 
+      />
+
       {/* Top Bar Header */}
-      <Header />
+      <Header onOpenInstallModal={openInstallModal} isInstalled={isInstalled} />
 
       {/* Main Workspace */}
       <main className="flex-1 max-w-[1920px] w-full mx-auto p-2 sm:p-4 lg:p-5 overflow-hidden">
@@ -116,6 +154,14 @@ export const App: React.FC = () => {
       <ExportModal />
       <KeyboardShortcutsHelp />
       <TeamFormationModal />
+      <PwaInstallModal 
+        isOpen={isModalOpen}
+        onClose={closeInstallModal}
+        canInstall={canInstall}
+        onPromptInstall={promptInstall}
+        isIos={isIos}
+        isInstalled={isInstalled}
+      />
     </div>
   );
 };
