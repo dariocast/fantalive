@@ -37,6 +37,36 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "./screenshots/mobile-auction-focus.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Asta Live a Latenza Zero con Timer e Scatti Rapidi"
+    },
+    {
+      "src": "./screenshots/mobile-roster-slots.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Gestione Budget, Max Bid Sicuro e Slot"
+    },
+    {
+      "src": "./screenshots/mobile-player-list.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Listone Giocatori e Probabili Formazioni Live"
+    },
+    {
+      "src": "./screenshots/desktop-dashboard.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard Desktop a 3 colonne per l'Asta"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Asta Live",
